@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hefajstos"
+version = "0.1.0"
+description = "Minimal terminal UI for agentic coding on top of the GitHub Copilot SDK"
+requires-python = ">=3.12"
+dependencies = [
+    "textual==8.2.8",
+    "dependency-injector==4.49.1",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "github-copilot-sdk==1.0.14",
+]
+
+[project.optional-dependencies]
+test = [
+    "coverage==7.16.0",
+]
+dev = [
+    "mypy==2.3.1",
+    "ruff==0.16.6",
+    "textual-dev==1.8.0",
+]
+
+[project.scripts]
+hefajstos = "hefajstos.__main__:main"
+
+[tool.uv]
+# The python.org interpreter on this machine has no CA bundle installed, so the
+# Copilot SDK cannot download its runtime over HTTPS. A uv-managed CPython uses
+# the system trust store and just works - pin it so every checkout matches.
+python-preference = "only-managed"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+hefajstos = ["ui/*.tcss"]
+
+[tool.ruff.lint]
+select = ["E", "F", "TID"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"tkinter".msg = "Nie używaj tkinter w tym projekcie."
+"rich".msg = "Nie importuj rich bezpośrednio; używaj Textual i ui/css.tcss."
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
+omit = [
+    "*/tests/*",
+    "test_*",
+    "*/hefajstos/__main__.py",
+    "*/hefajstos/ui/*",
+    "*/scripts/*",
+    # dependency-injector is a Cython extension; coverage cannot read its source.
+    "*.pyx",
+]
+skip_empty = true

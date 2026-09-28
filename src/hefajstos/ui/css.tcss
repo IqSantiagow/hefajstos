@@ -1,0 +1,210 @@
+/* ============================================================
+   Design tokens
+   Only for colours the gruvbox theme (set in ui/app.py) does not
+   provide. $primary / $secondary / $surface / $panel / $success /
+   $error / $warning all come from the Theme - do not redefine them.
+   ============================================================ */
+$muted-color: #928374;
+$tool-color: #8ec07c;
+
+Screen {
+    background: $surface;
+    layout: vertical;
+}
+
+/* Universal visibility switch, added and removed from Python. */
+.hidden {
+    display: none;
+}
+
+/* Dev tool: add manually to any widget's classes to see its box. */
+.border-debug {
+    border: solid red;
+}
+
+/* ============================================================
+   Status header
+   (WidgetStatusHeader)
+   ============================================================ */
+.status-header {
+    height: 1;
+    width: 100%;
+    padding: 0 1;
+    background: $panel;
+}
+
+.status-brand {
+    color: $primary;
+    text-style: bold;
+    margin-right: 2;
+}
+
+.status-value {
+    color: $muted-color;
+    margin-right: 2;
+}
+
+/* The directory is the one part allowed to eat the leftover width. */
+.status-directory {
+    color: $muted-color;
+    width: 1fr;
+    margin-right: 2;
+    text-overflow: ellipsis;
+}
+
+.status-state {
+    text-style: bold;
+}
+
+.status-state.-starting { color: $muted-color; }
+.status-state.-idle     { color: $success; }
+.status-state.-thinking { color: $primary; }
+
+/* ============================================================
+   Chat feed
+   (WidgetChatFeed, WidgetAgentMessage, WidgetUserMessage, WidgetToolCall)
+   ============================================================ */
+#chat-feed {
+    height: 1fr;
+    width: 100%;
+    padding: 1 1 0 1;
+    scrollbar-size-vertical: 1;
+}
+
+.chat-entry {
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+}
+
+.chat-entry-title {
+    text-style: bold;
+}
+
+.chat-entry-content {
+    width: 100%;
+    height: auto;
+}
+
+.user-entry .chat-entry-title { color: $secondary; }
+.agent-entry .chat-entry-title { color: $primary; }
+
+.notice-entry { color: $muted-color; }
+.error-entry  { color: $error; }
+
+/* --- tool calls --- */
+.tool-entry .chat-entry-title {
+    color: $tool-color;
+    margin-right: 1;
+}
+
+.tool-call-row {
+    width: 100%;
+    height: auto;
+}
+
+.tool-call-summary {
+    width: 1fr;
+    height: auto;
+    color: $foreground;
+}
+
+.tool-result {
+    width: 100%;
+    height: auto;
+    color: $muted-color;
+    padding-left: 2;
+}
+
+/* The whole entry turns red when the tool failed - set from Python. */
+.tool-entry.-error .chat-entry-title,
+.tool-entry.-error .tool-result {
+    color: $error;
+}
+
+/* ============================================================
+   Prompt row
+   (WidgetPromptInput)
+   ============================================================ */
+#prompt-row {
+    width: 100%;
+    height: auto;
+    padding: 0 1;
+    border-top: solid $panel;
+}
+
+.prompt-row {
+    width: 100%;
+    height: auto;
+}
+
+.prompt-marker {
+    color: $primary;
+    text-style: bold;
+    margin-right: 1;
+}
+
+#prompt-input {
+    width: 1fr;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.prompt-busy {
+    color: $warning;
+    margin-left: 2;
+}
+
+/* ============================================================
+   Permission modal
+   (ModalPermissionScreen)
+   ============================================================ */
+ModalPermissionScreen {
+    align: center middle;
+    background: $surface 60%;
+}
+
+#permission-dialog {
+    width: 80%;
+    max-width: 90;
+    height: auto;
+    max-height: 80%;
+    padding: 1 2;
+    background: $panel;
+    border: round $warning;
+}
+
+.permission-title {
+    color: $warning;
+    text-style: bold;
+    width: 100%;
+    margin-bottom: 1;
+}
+
+.permission-summary {
+    width: 100%;
+    height: auto;
+    color: $foreground;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.permission-detail {
+    width: 100%;
+    height: auto;
+    max-height: 20;
+    overflow-y: auto;
+    color: $muted-color;
+    margin-bottom: 1;
+}
+
+.permission-buttons {
+    width: 100%;
+    height: auto;
+    align-horizontal: right;
+}
+
+.permission-buttons Button {
+    margin-left: 2;
+}
