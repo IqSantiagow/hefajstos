@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator
 
-from hefajstos.presentation.view_models.header_view_model import AgentInfoViewModel
+from hefajstos.presentation.view_models.footer_view_model import AgentInfoViewModel
 from hefajstos.services.models.agent_events import PermissionDecision
 from hefajstos.use_cases.chat.abort_turn_use_case import AbortTurnUseCase
 from hefajstos.use_cases.chat.answer_permission_use_case import (

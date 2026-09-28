@@ -57,12 +57,19 @@ class NoticeViewModel:
     is_error: bool
 
 
+@dataclass(slots=True)
+class AutoApprovedViewModel:
+    action: str
+    summary: str
+
+
 ChatItem = (
     UserMessageViewModel
     | AgentTextViewModel
     | ToolCallViewModel
     | ToolResultViewModel
     | NoticeViewModel
+    | AutoApprovedViewModel
 )
 
 
@@ -88,10 +95,7 @@ def build_chat_item(event: AgentEvent) -> ChatItem | None:
         )
 
     if isinstance(event, PermissionRequested) and event.auto_approved:
-        return NoticeViewModel(
-            content=f"Auto-approved: {event.action} — {event.summary}",
-            is_error=False,
-        )
+        return AutoApprovedViewModel(action=event.action, summary=event.summary)
 
     if isinstance(event, AgentError):
         return NoticeViewModel(content=event.message, is_error=True)

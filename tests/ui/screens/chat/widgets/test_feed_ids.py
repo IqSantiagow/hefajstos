@@ -1,4 +1,4 @@
-"""The only test under ui/ - feed_ids is a pure function."""
+"""The only test of a whole module under ui/ - feed_ids is pure functions."""
 
 import re
 import unittest

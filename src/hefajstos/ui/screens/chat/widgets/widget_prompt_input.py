@@ -1,16 +1,14 @@
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import HorizontalGroup, VerticalGroup
+from textual.containers import VerticalGroup
 from textual.message import Message
 from textual.reactive import reactive
-from textual.widgets import Input, Label
+from textual.widgets import Input
 
 from hefajstos.services.models.agent_events import AgentStatus
 
-PROMPT_MARKER = "›"
 READY_PLACEHOLDER = "What should I do?"
 STARTING_PLACEHOLDER = "Starting the agent…"
-BUSY_TEXT = "working…"
 
 PROMPT_INPUT_ID = "prompt-input"
 
@@ -24,12 +22,7 @@ class WidgetPromptInput(VerticalGroup):
             super().__init__()
 
     def compose(self) -> ComposeResult:
-        with HorizontalGroup(classes="prompt-row"):
-            yield Label(PROMPT_MARKER, classes="prompt-marker")
-            yield Input(
-                placeholder=STARTING_PLACEHOLDER, id=PROMPT_INPUT_ID, compact=True
-            )
-            yield Label(BUSY_TEXT, id="prompt-busy", classes="prompt-busy hidden")
+        yield Input(placeholder=STARTING_PLACEHOLDER, id=PROMPT_INPUT_ID, compact=True)
 
     @on(Input.Submitted)
     def handle_input_submitted(self, event: Input.Submitted) -> None:
@@ -44,9 +37,6 @@ class WidgetPromptInput(VerticalGroup):
         prompt = self.query_one(f"#{PROMPT_INPUT_ID}", Input)
         prompt.disabled = is_starting
         prompt.placeholder = STARTING_PLACEHOLDER if is_starting else READY_PLACEHOLDER
-
-        busy = self.query_one("#prompt-busy", Label)
-        busy.set_class(new_status == AgentStatus.IDLE, "hidden")
 
     def focus_prompt(self) -> None:
         self.query_one(f"#{PROMPT_INPUT_ID}", Input).focus()

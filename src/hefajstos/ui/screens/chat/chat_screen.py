@@ -4,23 +4,26 @@ from textual import on, work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
-from textual.widgets import Footer
 
 from hefajstos.presentation.chat_repository import ChatRepository
 from hefajstos.presentation.view_models.chat_item_view_model import (
     AgentTextViewModel,
+    AutoApprovedViewModel,
     NoticeViewModel,
     ToolCallViewModel,
     ToolResultViewModel,
     UserMessageViewModel,
 )
-from hefajstos.presentation.view_models.header_view_model import TokensViewModel
+from hefajstos.presentation.view_models.footer_view_model import TokensViewModel
 from hefajstos.presentation.view_models.permission_view_model import PermissionViewModel
 from hefajstos.services.models.agent_events import AgentStatus, PermissionDecision
 from hefajstos.ui.screens.chat.modal_permission_screen import ModalPermissionScreen
 from hefajstos.ui.screens.chat.widgets.widget_chat_feed import WidgetChatFeed
 from hefajstos.ui.screens.chat.widgets.widget_prompt_input import WidgetPromptInput
-from hefajstos.ui.screens.chat.widgets.widget_status_header import WidgetStatusHeader
+from hefajstos.ui.screens.chat.widgets.widget_status_footer import WidgetStatusFooter
+from hefajstos.ui.screens.chat.widgets.widget_working_indicator import (
+    WidgetWorkingIndicator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +50,10 @@ class ChatScreen(Screen):
         self.chat_repository = chat_repository
 
     def compose(self) -> ComposeResult:
-        yield WidgetStatusHeader(id="status-header")
         yield WidgetChatFeed(id="chat-feed")
+        yield WidgetWorkingIndicator(id="working-indicator")
         yield WidgetPromptInput(id="prompt-row")
-        yield Footer()
+        yield WidgetStatusFooter(id="status-footer")
 
     def on_mount(self) -> None:
         self.set_up_agent_stream_worker()
@@ -67,8 +70,8 @@ class ChatScreen(Screen):
             self.feed.add_notice(NoticeViewModel(content=str(e), is_error=True))
             return
 
-        self.header.show_agent_info(agent_info)
-        self.header.agent_status = AgentStatus.IDLE
+        self.status_footer.show_agent_info(agent_info)
+        self.working_indicator.agent_status = AgentStatus.IDLE
         self.prompt_input.agent_status = AgentStatus.IDLE
         self.prompt_input.focus_prompt()
 
@@ -81,10 +84,10 @@ class ChatScreen(Screen):
         """
         async for item in self.chat_repository.stream_agent_responses():
             if isinstance(item, AgentStatus):
-                self.header.agent_status = item
+                self.working_indicator.agent_status = item
                 self.prompt_input.agent_status = item
             elif isinstance(item, TokensViewModel):
-                self.header.show_tokens(item)
+                self.status_footer.show_tokens(item)
             elif isinstance(item, PermissionViewModel):
                 await self.ask_for_permission(item)
             elif isinstance(item, AgentTextViewModel):
@@ -93,6 +96,8 @@ class ChatScreen(Screen):
                 self.feed.add_tool_call(item)
             elif isinstance(item, ToolResultViewModel):
                 self.feed.show_tool_result(item)
+            elif isinstance(item, AutoApprovedViewModel):
+                self.feed.add_auto_approved(item)
             elif isinstance(item, NoticeViewModel):
                 self.feed.add_notice(item)
 
@@ -100,7 +105,7 @@ class ChatScreen(Screen):
         decision = await self.app.push_screen_wait(ModalPermissionScreen(permission))
         self.feed.add_notice(
             NoticeViewModel(
-                content=f"{permission.title}: {DECISION_LABELS[decision]}"
+                content=f"Permission: {permission.action}: {DECISION_LABELS[decision]}"
                 f" — {permission.summary}",
                 is_error=False,
             )
@@ -124,8 +129,12 @@ class ChatScreen(Screen):
         return self.query_one("#chat-feed", WidgetChatFeed)
 
     @property
-    def header(self) -> WidgetStatusHeader:
-        return self.query_one("#status-header", WidgetStatusHeader)
+    def working_indicator(self) -> WidgetWorkingIndicator:
+        return self.query_one("#working-indicator", WidgetWorkingIndicator)
+
+    @property
+    def status_footer(self) -> WidgetStatusFooter:
+        return self.query_one("#status-footer", WidgetStatusFooter)
 
     @property
     def prompt_input(self) -> WidgetPromptInput:

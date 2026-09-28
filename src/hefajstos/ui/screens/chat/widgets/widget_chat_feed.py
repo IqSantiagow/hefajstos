@@ -5,6 +5,7 @@ from textual.widgets import Static
 
 from hefajstos.presentation.view_models.chat_item_view_model import (
     AgentTextViewModel,
+    AutoApprovedViewModel,
     NoticeViewModel,
     ToolCallViewModel,
     ToolResultViewModel,
@@ -24,10 +25,7 @@ ERROR_ENTRY = "error-entry"
 # Keeps the DOM small. Older entries are removed from the top.
 MAX_ENTRIES = 300
 
-WELCOME_TEXT = (
-    "Hefajstos is ready. Tell the agent what to do — you will see every command"
-    " before it runs."
-)
+WELCOME_TEXT = "hefajstos  ctrl+x abort · ctrl+c quit · click a tool result to expand"
 
 
 class WidgetChatFeed(VerticalScroll):
@@ -72,6 +70,15 @@ class WidgetChatFeed(VerticalScroll):
 
         tool_call.set_result(tool_result)
         self.__scroll_down_if_at_bottom()
+
+    def add_auto_approved(self, auto_approved: AutoApprovedViewModel) -> None:
+        self.add_notice(
+            NoticeViewModel(
+                content=f"Auto-approved: {auto_approved.action}"
+                f" — {auto_approved.summary}",
+                is_error=False,
+            )
+        )
 
     def add_notice(self, notice: NoticeViewModel) -> None:
         entry_class = ERROR_ENTRY if notice.is_error else NOTICE_ENTRY

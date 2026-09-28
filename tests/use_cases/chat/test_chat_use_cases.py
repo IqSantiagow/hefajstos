@@ -3,10 +3,10 @@ from collections.abc import AsyncGenerator
 
 from hefajstos.presentation.view_models.chat_item_view_model import (
     AgentTextViewModel,
-    NoticeViewModel,
+    AutoApprovedViewModel,
     ToolCallViewModel,
 )
-from hefajstos.presentation.view_models.header_view_model import TokensViewModel
+from hefajstos.presentation.view_models.footer_view_model import TokensViewModel
 from hefajstos.presentation.view_models.permission_view_model import PermissionViewModel
 from hefajstos.services.models.agent_events import (
     AgentEvent,
@@ -91,11 +91,11 @@ class TestLifecycleUseCases(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(agent.started)
 
-    async def test_start_returns_what_the_header_shows(self) -> None:
+    async def test_start_returns_what_the_footer_shows(self) -> None:
         agent_info = await StartAgentUseCase(agent_protocol=FakeAgent())()
 
-        self.assertEqual("gpt-5", agent_info.model_text)
-        self.assertEqual("/opt/project", agent_info.directory_text)
+        self.assertEqual("gpt-5", agent_info.model)
+        self.assertEqual("/opt/project", agent_info.working_directory)
 
     async def test_shutdown_shuts_the_agent_down(self) -> None:
         agent = FakeAgent()
@@ -163,10 +163,10 @@ class TestStreamAgentResponsesUseCase(unittest.IsolatedAsyncioTestCase):
             [AgentTextViewModel, ToolCallViewModel], [type(item) for item in items]
         )
 
-    async def test_tokens_become_the_header_text(self) -> None:
+    async def test_tokens_become_the_footer_text(self) -> None:
         items = await self.read_all([TokensUsed(input_tokens=1200, output_tokens=95)])
 
-        self.assertEqual([TokensViewModel(text="↑ 1 200 / ↓ 95")], items)
+        self.assertEqual([TokensViewModel(input_tokens=1200, output_tokens=95)], items)
 
     async def test_a_permission_request_becomes_the_modal(self) -> None:
         items = await self.read_all([make_permission(request_id="req-3")])
@@ -175,13 +175,13 @@ class TestStreamAgentResponsesUseCase(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(items[0], PermissionViewModel)
         self.assertEqual("req-3", items[0].request_id)
 
-    async def test_an_auto_approved_request_becomes_a_notice_not_a_modal(
+    async def test_an_auto_approved_request_is_not_a_modal(
         self,
     ) -> None:
         items = await self.read_all([make_permission(auto_approved=True)])
 
         self.assertEqual(1, len(items))
-        self.assertIsInstance(items[0], NoticeViewModel)
+        self.assertIsInstance(items[0], AutoApprovedViewModel)
 
     async def test_drops_events_the_screen_does_not_show(self) -> None:
         self.assertEqual([], await self.read_all([TurnFinished()]))

@@ -1,17 +1,17 @@
-from textual import on
 from textual.app import ComposeResult
-from textual.containers import HorizontalGroup, VerticalGroup
+from textual.containers import VerticalGroup
 from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Static
+from textual.widgets import Label, Static
 
 from hefajstos.presentation.view_models.permission_view_model import PermissionViewModel
 from hefajstos.services.models.agent_events import PermissionDecision
 
-APPROVE_BUTTON_ID = "permission-approve"
-REJECT_BUTTON_ID = "permission-reject"
+KEY_HINT = "y allow · n reject · esc reject"
 
 
 class ModalPermissionScreen(ModalScreen[PermissionDecision]):
+    """A bar across the bottom of the screen, answered with the keyboard only."""
+
     BINDINGS = [
         ("y", "approve", "Allow"),
         ("n", "reject", "Reject"),
@@ -25,27 +25,17 @@ class ModalPermissionScreen(ModalScreen[PermissionDecision]):
 
     def compose(self) -> ComposeResult:
         with VerticalGroup(id="permission-dialog"):
-            yield Label(self.view_model.title, classes="permission-title")
+            yield Label(
+                f"Permission: {self.view_model.action}",
+                markup=False,
+                classes="permission-title",
+            )
             yield Static(
                 self.view_model.summary, markup=False, classes="permission-summary"
             )
-            yield Static(
-                self.view_model.detail, markup=False, classes="permission-detail"
-            )
-            with HorizontalGroup(classes="permission-buttons"):
-                yield Button("Allow  (y)", id=APPROVE_BUTTON_ID, variant="success")
-                yield Button("Reject  (n)", id=REJECT_BUTTON_ID, variant="error")
-
-    def on_mount(self) -> None:
-        self.query_one(f"#{APPROVE_BUTTON_ID}", Button).focus()
-
-    @on(Button.Pressed, f"#{APPROVE_BUTTON_ID}")
-    def handle_approve_pressed(self) -> None:
-        self.action_approve()
-
-    @on(Button.Pressed, f"#{REJECT_BUTTON_ID}")
-    def handle_reject_pressed(self) -> None:
-        self.action_reject()
+            detail_classes = "permission-detail" if self.view_model.detail else "hidden"
+            yield Static(self.view_model.detail, markup=False, classes=detail_classes)
+            yield Label(KEY_HINT, classes="permission-hint")
 
     def action_approve(self) -> None:
         self.dismiss(PermissionDecision.APPROVE_ONCE)

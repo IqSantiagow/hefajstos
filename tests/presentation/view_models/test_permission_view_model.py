@@ -17,10 +17,10 @@ def make_permission(**overrides) -> PermissionRequested:
 
 
 class TestPermissionViewModel(unittest.TestCase):
-    def test_puts_the_action_in_the_title(self) -> None:
+    def test_keeps_the_action(self) -> None:
         view_model = PermissionViewModel.from_event(make_permission())
 
-        self.assertEqual("Permission: run command", view_model.title)
+        self.assertEqual("run command", view_model.action)
 
     def test_keeps_the_summary_and_the_detail(self) -> None:
         view_model = PermissionViewModel.from_event(make_permission())

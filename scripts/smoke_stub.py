@@ -27,14 +27,17 @@ from hefajstos.ui.screens.chat.widgets.widget_chat_feed import (  # noqa: E402
 from hefajstos.ui.screens.chat.widgets.widget_prompt_input import (  # noqa: E402
     PROMPT_INPUT_ID,
 )
-from hefajstos.ui.screens.chat.widgets.widget_status_header import (  # noqa: E402
-    WidgetStatusHeader,
+from hefajstos.ui.screens.chat.widgets.widget_status_footer import (  # noqa: E402
+    WidgetStatusFooter,
 )
 from hefajstos.ui.screens.chat.widgets.widget_tool_call import (  # noqa: E402
     WidgetToolCall,
 )
+from hefajstos.ui.screens.chat.widgets.widget_working_indicator import (  # noqa: E402
+    WidgetWorkingIndicator,
+)
 from hefajstos.services.models.agent_events import AgentStatus  # noqa: E402
-from textual.widgets import Input, Label, Static  # noqa: E402
+from textual.widgets import Input, Label  # noqa: E402
 
 WAIT_STEPS = 80
 WAIT_STEP_SECONDS = 0.05
@@ -58,9 +61,8 @@ async def walk_one_turn(answer: str) -> bool:
             print("ERROR: the permission modal did not show up")
             return False
 
-        print(
-            f"  modal: {app.screen.view_model.title} -> {app.screen.view_model.summary}"
-        )
+        modal = app.screen.view_model
+        print(f"  modal: {modal.action} -> {modal.summary}")
         await pilot.press(answer)
 
         for _ in range(WAIT_STEPS):
@@ -68,16 +70,17 @@ async def walk_one_turn(answer: str) -> bool:
 
         feed = app.screen.query_one(WidgetChatFeed)
         for message in feed.query(WidgetAgentMessage):
-            print("  AGENT:", message.query_one(".chat-entry-content", Static).content)
+            print("  AGENT:", message.content)
         for call in feed.query(WidgetToolCall):
             result = call.result.content if call.result else "—"
             call_line = f"{call.view_model.title} {call.view_model.summary}"
             print(f"  TOOL : {call_line} -> {result}")
 
-        header = app.screen.query_one(WidgetStatusHeader)
-        tokens = header.query_one("#status-tokens", Label).content
-        print(f"  status: {header.agent_status.value} | tokens: {tokens}")
-        return header.agent_status is AgentStatus.IDLE
+        footer = app.screen.query_one(WidgetStatusFooter)
+        tokens = footer.query_one("#footer-tokens", Label).content
+        status = app.screen.query_one(WidgetWorkingIndicator).agent_status
+        print(f"  status: {status.value} | tokens: {tokens}")
+        return status is AgentStatus.IDLE
 
 
 async def main() -> int:

@@ -2,6 +2,7 @@ import unittest
 
 from hefajstos.presentation.view_models.chat_item_view_model import (
     AgentTextViewModel,
+    AutoApprovedViewModel,
     NoticeViewModel,
     ToolCallViewModel,
     ToolResultViewModel,
@@ -80,12 +81,12 @@ class TestBuildChatItemTools(unittest.TestCase):
 
 
 class TestBuildChatItemNotices(unittest.TestCase):
-    def test_an_auto_approved_request_becomes_a_notice(self) -> None:
+    def test_an_auto_approved_request_keeps_the_action_and_the_summary(self) -> None:
         item = build_chat_item(make_permission(auto_approved=True))
 
-        self.assertFalse(item.is_error)
-        self.assertIn("Auto-approved", item.content)
-        self.assertIn("ls", item.content)
+        self.assertEqual(
+            AutoApprovedViewModel(action="run command", summary="ls"), item
+        )
 
     def test_a_pending_request_is_not_rendered_as_a_notice(self) -> None:
         self.assertIsNone(build_chat_item(make_permission(auto_approved=False)))

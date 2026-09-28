@@ -59,7 +59,7 @@ AgentService.consume_prompt_queue():      # the only consumer: ChatScreen's work
   the class for it.
 
 There is deliberately **no** `EventBus` (one producer, one consumer), no second
-stream for the header state and no state reducer (the status travels in the
+stream for the footer state and no state reducer (the status travels in the
 same stream as the answers), no `config.yaml` and no `SettingsService` (there is
 no settings screen). Add them only once a second consumer or a settings screen
 appears.
@@ -105,9 +105,11 @@ gets the title `unknown action` and the type name.
 Stdlib `unittest` + `coverage`, mirrored tree, `IsolatedAsyncioTestCase`,
 hand-written Fakes for protocols (not `Mock`), `make_x(**overrides)` builders.
 **Widgets are not tested** — the convention pushes every testable decision into
-a view model or a module-level function; the only exception under `ui/` is
-`feed_ids.py`. `ui/` is excluded from coverage; `scripts/smoke_stub.py` covers it
-instead.
+a view model or a module-level function; the only exception under `ui/` are
+the pure module-level functions (`feed_ids.py`, `shorten_home`,
+`format_token_count`, `preview_tool_output`) - they stay next to the widget
+that uses them. `ui/` is excluded from coverage; `scripts/smoke_stub.py`
+covers it instead.
 
 ## Constraints
 

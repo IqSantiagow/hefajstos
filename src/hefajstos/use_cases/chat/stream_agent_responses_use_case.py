@@ -4,7 +4,7 @@ from hefajstos.presentation.view_models.chat_item_view_model import (
     ChatItem,
     build_chat_item,
 )
-from hefajstos.presentation.view_models.header_view_model import TokensViewModel
+from hefajstos.presentation.view_models.footer_view_model import TokensViewModel
 from hefajstos.presentation.view_models.permission_view_model import PermissionViewModel
 from hefajstos.protocols.agent_protocol import AgentProtocol
 from hefajstos.services.models.agent_events import (
