@@ -29,6 +29,9 @@ WELCOME_TEXT = "hefajstos  ctrl+x abort · ctrl+c quit · click a tool result to
 
 
 class WidgetChatFeed(VerticalScroll):
+    def on_mount(self) -> None:
+        self.anchor()
+
     def compose(self) -> ComposeResult:
         yield Static(WELCOME_TEXT, markup=False, classes=f"chat-entry {NOTICE_ENTRY}")
 
@@ -48,7 +51,6 @@ class WidgetChatFeed(VerticalScroll):
             message.set_text(agent_text.text)
         else:
             message.append_text(agent_text.text)
-        self.__scroll_down_if_at_bottom()
 
     def add_tool_call(self, tool_call: ToolCallViewModel) -> None:
         self.__add_entry(WidgetToolCall(tool_call))
@@ -69,7 +71,6 @@ class WidgetChatFeed(VerticalScroll):
             return
 
         tool_call.set_result(tool_result)
-        self.__scroll_down_if_at_bottom()
 
     def add_auto_approved(self, auto_approved: AutoApprovedViewModel) -> None:
         self.add_notice(
@@ -87,21 +88,9 @@ class WidgetChatFeed(VerticalScroll):
         )
 
     def __add_entry(self, widget) -> None:
-        was_at_bottom = self.__is_at_bottom()
         self.mount(widget)
 
         too_many = len(self.children) - MAX_ENTRIES
         if too_many > 0:
             for oldest in list(self.children)[:too_many]:
                 oldest.remove()
-
-        if was_at_bottom:
-            self.call_after_refresh(self.scroll_end, animate=False)
-
-    def __scroll_down_if_at_bottom(self) -> None:
-        if self.__is_at_bottom():
-            self.call_after_refresh(self.scroll_end, animate=False)
-
-    def __is_at_bottom(self) -> bool:
-        # Only follow new text when the user has not scrolled up to read history.
-        return self.scroll_offset.y >= self.max_scroll_y - 1
