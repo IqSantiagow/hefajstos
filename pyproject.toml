@@ -44,8 +44,8 @@ hefajstos = ["ui/*.tcss"]
 select = ["E", "F", "TID"]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-"tkinter".msg = "Nie używaj tkinter w tym projekcie."
-"rich".msg = "Nie importuj rich bezpośrednio; używaj Textual i ui/css.tcss."
+"tkinter".msg = "Do not use tkinter in this project."
+"rich".msg = "Do not import rich directly; use Textual and ui/css.tcss."
 
 [tool.coverage.run]
 source = ["src"]
