@@ -104,6 +104,7 @@ def map_permission_request(
     request: PermissionRequest, request_id: str
 ) -> PermissionRequested:
     action, summary, detail = describe_permission_request(request)
+    is_read_only, paths = describe_read_access(request)
 
     return PermissionRequested(
         request_id=request_id,
@@ -112,7 +113,28 @@ def map_permission_request(
         detail=_shorten(detail, MAX_PERMISSION_DETAIL_CHARACTERS),
         requires_manual_approval=getattr(request, "managed_approval_required", False)
         is True,
+        is_read_only=is_read_only,
+        paths=paths,
     )
+
+
+def describe_read_access(request: PermissionRequest) -> tuple[bool, list[str]]:
+    if isinstance(request, PermissionRequestRead):
+        return True, [request.resolved_path or request.path]
+
+    if isinstance(request, PermissionRequestShell):
+        is_read_only = (
+            bool(request.commands)
+            and all(command.read_only for command in request.commands)
+            and not request.has_write_file_redirection
+        )
+        resolved = request.resolved_paths or {}
+        paths = [resolved.get(path, path) for path in request.possible_paths]
+        if request.resolved_working_directory:
+            paths.append(request.resolved_working_directory)
+        return is_read_only, paths
+
+    return False, []
 
 
 def describe_permission_request(request: PermissionRequest) -> tuple[str, str, str]:

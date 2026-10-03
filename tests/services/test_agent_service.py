@@ -1,8 +1,10 @@
 import asyncio
+import tempfile
 import unittest
+from pathlib import Path
 from collections.abc import AsyncGenerator
 
-from hefajstos.services.agent_service import AgentService
+from hefajstos.services.agent_service import AgentService, is_inside
 from hefajstos.services.models.agent_events import (
     AgentError,
     AgentEvent,
@@ -223,3 +225,72 @@ class TestAgentServiceModels(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual("claude-sonnet-5", service.model)
         self.assertEqual({"reasoning_effort": "high"}, service.model_settings)
+
+
+class TestIsInside(unittest.TestCase):
+    def setUp(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.project = str(Path(temporary.name) / "project")
+
+    def test_a_relative_path_counts_from_the_project(self) -> None:
+        self.assertTrue(is_inside("src/main.py", self.project))
+
+    def test_the_project_itself_is_inside(self) -> None:
+        self.assertTrue(is_inside(self.project, self.project))
+
+    def test_an_absolute_path_inside_the_project_is_inside(self) -> None:
+        self.assertTrue(is_inside(str(Path(self.project, "a.txt")), self.project))
+
+    def test_climbing_out_with_dot_dot_is_outside(self) -> None:
+        self.assertFalse(is_inside("../secrets.txt", self.project))
+
+    def test_the_home_directory_is_outside(self) -> None:
+        self.assertFalse(is_inside("~/.ssh/id_rsa", self.project))
+
+    def test_a_sibling_with_the_same_prefix_is_outside(self) -> None:
+        self.assertFalse(is_inside(self.project + "-old/a.txt", self.project))
+
+
+class TestAgentServiceProjectReads(unittest.IsolatedAsyncioTestCase):
+    async def answers_for(self, permission: PermissionRequested) -> list:
+        sdk = FakeAgentSdk(events=[permission])
+        await read_one_turn(AgentService(sdk, auto_approve_tools=False))
+        return sdk.answers
+
+    async def test_a_read_inside_the_project_is_approved(self) -> None:
+        answers = await self.answers_for(
+            make_permission(is_read_only=True, paths=["src/main.py"])
+        )
+
+        self.assertEqual([("req-1", PermissionDecision.APPROVE_ONCE)], answers)
+
+    async def test_a_read_only_command_without_paths_is_approved(self) -> None:
+        answers = await self.answers_for(make_permission(is_read_only=True, paths=[]))
+
+        self.assertEqual(1, len(answers))
+
+    async def test_a_read_outside_the_project_waits_for_the_user(self) -> None:
+        answers = await self.answers_for(
+            make_permission(is_read_only=True, paths=["src", "~/.ssh/id_rsa"])
+        )
+
+        self.assertEqual([], answers)
+
+    async def test_a_request_that_writes_waits_for_the_user(self) -> None:
+        answers = await self.answers_for(
+            make_permission(is_read_only=False, paths=["src/main.py"])
+        )
+
+        self.assertEqual([], answers)
+
+    async def test_a_read_that_requires_manual_approval_waits_for_the_user(
+        self,
+    ) -> None:
+        answers = await self.answers_for(
+            make_permission(
+                is_read_only=True, paths=["src"], requires_manual_approval=True
+            )
+        )
+
+        self.assertEqual([], answers)

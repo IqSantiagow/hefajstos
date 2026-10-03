@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import os
 from collections.abc import AsyncGenerator
 from dataclasses import replace
+from pathlib import Path
 
 from hefajstos.protocols.agent_sdk_protocol import AgentSdkProtocol
 from hefajstos.services.models.agent_events import (
@@ -80,7 +82,11 @@ class AgentService:
     def __auto_approve_if_allowed(
         self, request: PermissionRequested
     ) -> PermissionRequested:
-        if not self.__auto_approve_tools or request.requires_manual_approval:
+        if request.requires_manual_approval:
+            return request
+        if not self.__auto_approve_tools and not is_read_inside(
+            request, self.working_directory
+        ):
             return request
 
         self.agent_sdk.answer_permission(
@@ -95,3 +101,15 @@ class AgentService:
         return TokensUsed(
             input_tokens=self.__input_tokens, output_tokens=self.__output_tokens
         )
+
+
+def is_read_inside(request: PermissionRequested, directory: str) -> bool:
+    return request.is_read_only and all(
+        is_inside(path, directory) for path in request.paths
+    )
+
+
+def is_inside(path: str, directory: str) -> bool:
+    base = Path(directory).resolve()
+    target = (base / Path(path).expanduser()).resolve()
+    return Path(os.path.normcase(target)).is_relative_to(os.path.normcase(base))

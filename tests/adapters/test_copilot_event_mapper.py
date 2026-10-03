@@ -5,12 +5,14 @@ from copilot.generated.session_events import (
     PermissionRequestMcp,
     PermissionRequestRead,
     PermissionRequestShell,
+    PermissionRequestShellCommand,
     PermissionRequestWrite,
 )
 
 from hefajstos.adapters.copilot_event_mapper import (
     MAX_PERMISSION_DETAIL_CHARACTERS,
     MAX_TOOL_RESULT_CHARACTERS,
+    describe_read_access,
     map_model,
     map_permission_request,
     map_session_event,
@@ -291,3 +293,85 @@ class TestSdkSettingValue(unittest.TestCase):
         value = sdk_setting_value({"reasoning_effort": "high"}, "reasoning_effort")
 
         self.assertEqual("high", value)
+
+
+def make_shell_request(**overrides) -> PermissionRequestShell:
+    defaults = dict(
+        can_offer_session_approval=True,
+        commands=[PermissionRequestShellCommand(identifier="ls", read_only=True)],
+        full_command_text="ls src",
+        has_write_file_redirection=False,
+        intention="See what is in src",
+        possible_paths=["src"],
+        possible_urls=[],
+    )
+    defaults.update(overrides)
+    return PermissionRequestShell(**defaults)  # type: ignore[arg-type]
+
+
+class TestDescribeReadAccess(unittest.TestCase):
+    def test_a_file_read_is_read_only_and_touches_its_path(self) -> None:
+        request = PermissionRequestRead(intention="Read", path="config.yaml")
+
+        self.assertEqual((True, ["config.yaml"]), describe_read_access(request))
+
+    def test_a_file_read_prefers_the_resolved_path(self) -> None:
+        request = PermissionRequestRead(
+            intention="Read", path="config.yaml", resolved_path="/p/config.yaml"
+        )
+
+        self.assertEqual((True, ["/p/config.yaml"]), describe_read_access(request))
+
+    def test_a_shell_command_the_cli_calls_read_only_is_read_only(self) -> None:
+        self.assertEqual((True, ["src"]), describe_read_access(make_shell_request()))
+
+    def test_one_writing_command_makes_the_whole_line_not_read_only(self) -> None:
+        request = make_shell_request(
+            commands=[
+                PermissionRequestShellCommand(identifier="ls", read_only=True),
+                PermissionRequestShellCommand(identifier="rm", read_only=False),
+            ]
+        )
+
+        is_read_only, _ = describe_read_access(request)
+
+        self.assertFalse(is_read_only)
+
+    def test_a_redirect_into_a_file_is_not_read_only(self) -> None:
+        request = make_shell_request(has_write_file_redirection=True)
+
+        is_read_only, _ = describe_read_access(request)
+
+        self.assertFalse(is_read_only)
+
+    def test_a_line_without_commands_is_not_read_only(self) -> None:
+        is_read_only, _ = describe_read_access(make_shell_request(commands=[]))
+
+        self.assertFalse(is_read_only)
+
+    def test_uses_resolved_paths_and_adds_the_directory_it_runs_in(self) -> None:
+        request = make_shell_request(
+            possible_paths=["src", "README.md"],
+            resolved_paths={"src": "/etc/src"},
+            resolved_working_directory="/etc",
+        )
+
+        _, paths = describe_read_access(request)
+
+        self.assertEqual(["/etc/src", "README.md", "/etc"], paths)
+
+    def test_a_write_request_is_not_read_only(self) -> None:
+        request = PermissionRequestWrite(
+            can_offer_session_approval=True,
+            diff="+ x",
+            file_name="a.py",
+            intention="Edit",
+        )
+
+        self.assertEqual((False, []), describe_read_access(request))
+
+    def test_map_permission_request_carries_the_read_access(self) -> None:
+        permission = map_permission_request(make_shell_request(), "req-1")
+
+        self.assertTrue(permission.is_read_only)
+        self.assertEqual(["src"], permission.paths)

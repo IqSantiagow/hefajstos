@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -55,6 +55,8 @@ class PermissionRequested:
     detail: str
     requires_manual_approval: bool
     auto_approved: bool = False
+    is_read_only: bool = False
+    paths: list[str] = field(default_factory=list)
 
 
 @dataclass
