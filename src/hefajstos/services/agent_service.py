@@ -23,6 +23,7 @@ class AgentService:
     def __init__(self, agent_sdk: AgentSdkProtocol, auto_approve_tools: bool) -> None:
         self.agent_sdk = agent_sdk
         self.working_directory = agent_sdk.working_directory
+        self.is_turn_running = False
         self.__auto_approve_tools = auto_approve_tools
         self.__prompt_queue: asyncio.Queue[str] = asyncio.Queue()
         self.__input_tokens = 0
@@ -51,6 +52,11 @@ class AgentService:
     async def abort_turn(self) -> None:
         await self.agent_sdk.abort()
 
+    async def new_session(self) -> None:
+        await self.agent_sdk.new_session()
+        self.__input_tokens = 0
+        self.__output_tokens = 0
+
     async def list_models(self) -> list[ModelChoice]:
         return await self.agent_sdk.list_models()
 
@@ -62,6 +68,7 @@ class AgentService:
     ) -> AsyncGenerator[AgentStatus | AgentEvent, None]:
         while True:
             prompt = await self.__prompt_queue.get()
+            self.is_turn_running = True
 
             yield AgentStatus.THINKING
 
@@ -76,6 +83,7 @@ class AgentService:
                 logger.exception("Agent turn failed", exc_info=error)
                 yield AgentError(message=f"The agent turn failed: {error}")
 
+            self.is_turn_running = False
             yield AgentStatus.IDLE
 
     def __auto_approve_if_allowed(

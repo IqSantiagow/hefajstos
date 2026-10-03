@@ -81,6 +81,7 @@ class FakeClient:
         self.kwargs = kwargs
         self.session = FakeSession()
         self.create_session_kwargs: dict[str, Any] = {}
+        self.create_session_failure: Exception | None = None
         self.stopped = False
         self.models = [FakeModel("auto"), FakeModel("claude-sonnet-5")]
         self.list_models_failure: Exception | None = None
@@ -94,6 +95,8 @@ class FakeClient:
         return self.models
 
     async def create_session(self, **kwargs) -> FakeSession:
+        if self.create_session_failure is not None:
+            raise self.create_session_failure
         self.create_session_kwargs = kwargs
         return self.session
 
@@ -454,6 +457,58 @@ class TestCopilotAgentAdapterModels(CopilotAgentAdapterTestCase):
             await self.adapter.set_model(ModelSelection(model_id="nope", settings={}))
 
         self.assertEqual("auto", self.adapter.model)
+
+
+class TestCopilotAgentAdapterNewSession(CopilotAgentAdapterTestCase):
+    async def test_opens_a_session_with_the_current_model_and_settings(
+        self,
+    ) -> None:
+        await self.adapter.start()
+        await self.adapter.set_model(
+            ModelSelection(model_id="gpt-5.4", settings={"reasoning_effort": "high"})
+        )
+
+        await self.adapter.new_session()
+
+        kwargs = self.client.create_session_kwargs
+        self.assertEqual("gpt-5.4", kwargs["model"])
+        self.assertEqual("high", kwargs["reasoning_effort"])
+        self.assertIsNone(kwargs["context_tier"])
+
+    async def test_closes_the_old_session_and_streams_from_the_new_one(
+        self,
+    ) -> None:
+        await self.adapter.start()
+        old_session = self.session
+        self.client.session = FakeSession()
+
+        await self.adapter.new_session()
+
+        self.assertTrue(old_session.unsubscribed)
+        self.assertEqual(["disconnect"], old_session.calls)
+        self.client.session.events_on_send = [
+            make_text_delta(),
+            make_session_idle(),
+        ]
+        events = [event async for event in self.adapter.send_and_stream("hello")]
+        self.assertEqual(["hello"], self.client.session.sent_prompts)
+        self.assertEqual(1, len(events))
+
+    async def test_a_failed_new_session_keeps_the_old_one(self) -> None:
+        await self.adapter.start()
+        self.client.create_session_failure = RuntimeError("offline")
+
+        with self.assertRaises(AgentSdkError):
+            await self.adapter.new_session()
+
+        self.assertFalse(self.session.unsubscribed)
+        self.assertEqual([], self.session.calls)
+
+    async def test_a_new_session_before_the_start_is_an_agent_sdk_error(
+        self,
+    ) -> None:
+        with self.assertRaises(AgentSdkError):
+            await self.adapter.new_session()
 
 
 class TestCopilotAgentAdapterShutdown(CopilotAgentAdapterTestCase):

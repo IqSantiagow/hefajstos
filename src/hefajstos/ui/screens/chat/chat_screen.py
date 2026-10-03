@@ -14,7 +14,10 @@ from hefajstos.presentation.view_models.chat_item_view_model import (
     ToolResultViewModel,
     UserMessageViewModel,
 )
-from hefajstos.presentation.view_models.command_view_model import ClearFeedViewModel
+from hefajstos.presentation.view_models.command_view_model import (
+    ClearFeedViewModel,
+    NewSessionViewModel,
+)
 from hefajstos.presentation.view_models.footer_view_model import TokensViewModel
 from hefajstos.presentation.view_models.model_picker_view_model import (
     ModelChangedViewModel,
@@ -146,6 +149,10 @@ class ChatScreen(Screen):
         outcome = await self.chat_repository.run_command(text)
         if isinstance(outcome, ClearFeedViewModel):
             self.feed.clear()
+        elif isinstance(outcome, NewSessionViewModel):
+            self.feed.clear()
+            self.status_footer.show_tokens(outcome.tokens)
+            self.feed.add_notice(outcome.notice)
         elif isinstance(outcome, NoticeViewModel):
             self.feed.add_notice(outcome)
         elif isinstance(outcome, ModelPickerViewModel):

@@ -21,6 +21,7 @@ from hefajstos.ui.screens.chat.widgets.widget_tool_call import WidgetToolCall
 
 NOTICE_ENTRY = "notice-entry"
 ERROR_ENTRY = "error-entry"
+INTRO_ENTRY = "intro-entry"
 
 MAX_ENTRIES = 300
 
@@ -32,8 +33,12 @@ class WidgetChatFeed(VerticalScroll):
         self.anchor()
 
     def compose(self) -> ComposeResult:
-        yield WidgetForgeLogo()
-        yield Static(WELCOME_TEXT, markup=False, classes=f"chat-entry {NOTICE_ENTRY}")
+        yield WidgetForgeLogo(classes=INTRO_ENTRY)
+        yield Static(
+            WELCOME_TEXT,
+            markup=False,
+            classes=f"chat-entry {NOTICE_ENTRY} {INTRO_ENTRY}",
+        )
 
     def add_user_message(self, user_message: UserMessageViewModel) -> None:
         self.__add_entry(WidgetUserMessage(user_message.content))
@@ -88,12 +93,15 @@ class WidgetChatFeed(VerticalScroll):
         )
 
     def clear(self) -> None:
-        self.remove_children()
+        self.remove_children(self.__entries())
 
     def __add_entry(self, widget) -> None:
         self.mount(widget)
 
-        too_many = len(self.children) - MAX_ENTRIES
+        entries = self.__entries()
+        too_many = len(entries) - MAX_ENTRIES
         if too_many > 0:
-            for oldest in list(self.children)[:too_many]:
-                oldest.remove()
+            self.remove_children(entries[:too_many])
+
+    def __entries(self) -> list:
+        return [child for child in self.children if not child.has_class(INTRO_ENTRY)]

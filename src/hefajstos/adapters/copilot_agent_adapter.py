@@ -57,12 +57,7 @@ class CopilotAgentAdapter:
         self.__client = CopilotClient(working_directory=self.working_directory)
         await self.__client.start()
         await self.__check_model_exists()
-        self.__session = await self.__client.create_session(
-            model=self.model,
-            working_directory=self.working_directory,
-            streaming=True,
-            on_permission_request=self.__on_permission_request,
-        )
+        self.__session = await self.__create_session()
         self.__unsubscribe = self.__session.on(self.__on_sdk_event)
 
     async def send_and_stream(self, prompt: str) -> AsyncGenerator[AgentEvent, None]:
@@ -123,6 +118,19 @@ class CopilotAgentAdapter:
             return
         await self.__session.abort()
 
+    async def new_session(self) -> None:
+        if self.__client is None:
+            raise AgentSdkError("The agent is not started yet.")
+        try:
+            new_session = await self.__create_session()
+        except Exception as e:
+            raise AgentSdkError(f"Could not start a new session: {e}") from e
+
+        self.__answer_all_pending_permissions(PermissionDecision.USER_NOT_AVAILABLE)
+        await self.__close_session()
+        self.__session = new_session
+        self.__unsubscribe = new_session.on(self.__on_sdk_event)
+
     async def stop(self) -> None:
         # Open permissions first, or the CLI process hangs.
         self.__answer_all_pending_permissions(PermissionDecision.USER_NOT_AVAILABLE)
@@ -133,6 +141,28 @@ class CopilotAgentAdapter:
             except Exception as e:
                 logger.exception("Failed to abort the turn", exc_info=e)
 
+        await self.__close_session()
+
+        if self.__client is not None:
+            try:
+                await self.__client.stop()
+            except Exception as e:
+                logger.exception("Failed to stop the Copilot client", exc_info=e)
+            self.__client = None
+
+    async def __create_session(self) -> Any:
+        if self.__client is None:
+            raise RuntimeError("The client is not started.")
+        return await self.__client.create_session(
+            model=self.model,
+            reasoning_effort=sdk_setting_value(self.model_settings, REASONING_EFFORT),  # type: ignore
+            context_tier=sdk_setting_value(self.model_settings, CONTEXT_TIER),  # type: ignore
+            working_directory=self.working_directory,
+            streaming=True,
+            on_permission_request=self.__on_permission_request,
+        )
+
+    async def __close_session(self) -> None:
         if self.__unsubscribe is not None:
             try:
                 self.__unsubscribe()
@@ -146,13 +176,6 @@ class CopilotAgentAdapter:
             except Exception as e:
                 logger.exception("Failed to disconnect the session", exc_info=e)
             self.__session = None
-
-        if self.__client is not None:
-            try:
-                await self.__client.stop()
-            except Exception as e:
-                logger.exception("Failed to stop the Copilot client", exc_info=e)
-            self.__client = None
 
     async def __check_model_exists(self) -> None:
         if self.__client is None:

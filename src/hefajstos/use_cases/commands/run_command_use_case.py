@@ -1,7 +1,10 @@
 import logging
 
 from hefajstos.presentation.view_models.chat_item_view_model import NoticeViewModel
-from hefajstos.presentation.view_models.command_view_model import ClearFeedViewModel
+from hefajstos.presentation.view_models.command_view_model import (
+    ClearFeedViewModel,
+    NewSessionViewModel,
+)
 from hefajstos.presentation.view_models.model_picker_view_model import (
     ModelPickerViewModel,
 )
@@ -11,12 +14,15 @@ from hefajstos.services.models.commands import (
     ClearFeed,
     CommandNotice,
     CommandResult,
+    NewSessionStarted,
     OpenModelPicker,
 )
 
 logger = logging.getLogger(__name__)
 
-CommandOutcome = NoticeViewModel | ClearFeedViewModel | ModelPickerViewModel
+CommandOutcome = (
+    NoticeViewModel | ClearFeedViewModel | NewSessionViewModel | ModelPickerViewModel
+)
 
 
 class RunCommandUseCase:
@@ -35,6 +41,8 @@ class RunCommandUseCase:
 def build_command_outcome(result: CommandResult) -> CommandOutcome:
     if isinstance(result, ClearFeed):
         return ClearFeedViewModel()
+    if isinstance(result, NewSessionStarted):
+        return NewSessionViewModel.started()
     if isinstance(result, OpenModelPicker):
         return ModelPickerViewModel.from_result(result)
     if isinstance(result, CommandNotice):

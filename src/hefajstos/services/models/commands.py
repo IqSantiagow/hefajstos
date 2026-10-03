@@ -22,10 +22,15 @@ class ClearFeed:
 
 
 @dataclass
+class NewSessionStarted:
+    pass
+
+
+@dataclass
 class OpenModelPicker:
     models: list[ModelChoice]
     current_model_id: str
     current_settings: dict[str, str]
 
 
-CommandResult = CommandNotice | ClearFeed | OpenModelPicker
+CommandResult = CommandNotice | ClearFeed | NewSessionStarted | OpenModelPicker

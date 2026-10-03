@@ -4,7 +4,9 @@ from hefajstos.presentation.view_models.chat_item_view_model import NoticeViewMo
 from hefajstos.presentation.view_models.command_view_model import (
     ClearFeedViewModel,
     CommandViewModel,
+    NewSessionViewModel,
 )
+from hefajstos.presentation.view_models.footer_view_model import TokensViewModel
 from hefajstos.presentation.view_models.model_picker_view_model import (
     ModelChangedViewModel,
     ModelPickerViewModel,
@@ -15,6 +17,7 @@ from hefajstos.services.models.commands import (
     CommandNotice,
     CommandResult,
     CommandSource,
+    NewSessionStarted,
     OpenModelPicker,
 )
 from hefajstos.services.models.model_choice import ModelChoice, ModelSelection
@@ -108,6 +111,17 @@ class TestRunCommandUseCase(unittest.IsolatedAsyncioTestCase):
         outcome = await make_run_command(FakeCommands(result=ClearFeed()))("/clear")
 
         self.assertEqual(ClearFeedViewModel(), outcome)
+
+    async def test_a_new_session_clears_the_tokens_and_says_so(self) -> None:
+        outcome = await make_run_command(FakeCommands(result=NewSessionStarted()))(
+            "/new"
+        )
+
+        assert isinstance(outcome, NewSessionViewModel)
+        self.assertEqual(
+            TokensViewModel(input_tokens=0, output_tokens=0), outcome.tokens
+        )
+        self.assertFalse(outcome.notice.is_error)
 
     async def test_a_notice_keeps_its_text_and_error_flag(self) -> None:
         notice = CommandNotice(text="Unknown command: /x", is_error=True)

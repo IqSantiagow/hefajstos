@@ -7,6 +7,7 @@ from hefajstos.presentation.chat_repository import ChatRepository
 from hefajstos.services.agent_service import AgentService
 from hefajstos.services.commands.clear_command import ClearCommand
 from hefajstos.services.commands.model_command import ModelCommand
+from hefajstos.services.commands.new_command import NewCommand
 from hefajstos.services.commands_service import CommandsService
 from hefajstos.use_cases.chat.abort_turn_use_case import AbortTurnUseCase
 from hefajstos.use_cases.chat.answer_permission_use_case import (
@@ -51,9 +52,10 @@ class Container(containers.DeclarativeContainer):
 
     model_command = providers.Singleton(ModelCommand, agent_protocol=agent_service)
     clear_command = providers.Singleton(ClearCommand)
+    new_command = providers.Singleton(NewCommand, agent_protocol=agent_service)
     commands_service = providers.Singleton(
         CommandsService,
-        commands=providers.List(model_command, clear_command),
+        commands=providers.List(model_command, clear_command, new_command),
     )
 
     start_agent_use_case = providers.Factory(

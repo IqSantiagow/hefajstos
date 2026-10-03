@@ -57,9 +57,9 @@ class TestContainerEngineSelection(unittest.TestCase):
 
 
 class TestContainerSlashCommands(unittest.TestCase):
-    def test_model_and_clear_are_registered(self) -> None:
+    def test_model_clear_and_new_are_registered(self) -> None:
         commands = make_container(engine="stub").commands_service()
 
         names = [command.name for command in commands.list_matching("/")]
 
-        self.assertEqual(["clear", "model"], names)
+        self.assertEqual(["clear", "model", "new"], names)

@@ -121,8 +121,8 @@ async def walk_slash_commands() -> bool:
 
         command_list = app.screen.query_one(WidgetCommandList)
         await pilot.press("/")
-        if not await wait_until(pilot, lambda: command_list.option_count == 2):
-            print("ERROR: '/' did not list the two built-in commands")
+        if not await wait_until(pilot, lambda: command_list.option_count == 3):
+            print("ERROR: '/' did not list the three built-in commands")
             return False
         print(f"  '/': {command_list.option_count} commands listed")
 
@@ -178,10 +178,25 @@ async def walk_slash_commands() -> bool:
 
         feed = app.screen.query_one(WidgetChatFeed)
         await pilot.press(*"/clear", "enter")
-        if not await wait_until(pilot, lambda: len(feed.children) == 0):
-            print("ERROR: /clear did not empty the feed")
+        if not await wait_until(pilot, lambda: len(feed.children) == 2):
+            print("ERROR: /clear did not leave just the logo and the welcome line")
             return False
-        print("  /clear: the feed is empty")
+        if not feed.query(WidgetForgeLogo):
+            print("ERROR: /clear removed the logo")
+            return False
+        print("  /clear: only the logo and the welcome line are left")
+
+        footer_tokens = app.screen.query_one("#footer-tokens", Label)
+        await pilot.press(*"/new", "enter")
+        if not await wait_until(
+            pilot,
+            lambda: len(feed.children) == 3 and str(footer_tokens.content) == "↑0 ↓0",
+        ):
+            print("ERROR: /new did not leave the intro, one notice and zero tokens")
+            return False
+        print(
+            f"  /new: logo, welcome line and one notice, tokens {footer_tokens.content}"
+        )
         return True
 
 

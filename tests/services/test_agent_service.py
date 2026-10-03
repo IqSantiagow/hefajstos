@@ -62,6 +62,9 @@ class FakeAgentSdk:
     async def abort(self) -> None:
         self.calls.append("abort")
 
+    async def new_session(self) -> None:
+        self.calls.append("new_session")
+
     async def stop(self) -> None:
         self.calls.append("stop")
 
@@ -174,6 +177,34 @@ class TestAgentServiceTokens(unittest.IsolatedAsyncioTestCase):
         items = await read_one_turn(service)
 
         self.assertEqual(TokensUsed(input_tokens=200, output_tokens=20), items[1])
+
+    async def test_a_new_session_counts_tokens_from_zero(self) -> None:
+        sdk = FakeAgentSdk(events=[TokensUsed(input_tokens=100, output_tokens=10)])
+        service = AgentService(sdk, auto_approve_tools=False)
+
+        await read_one_turn(service)
+        await service.new_session()
+        items = await read_one_turn(service)
+
+        self.assertEqual(["new_session"], sdk.calls)
+        self.assertEqual(TokensUsed(input_tokens=100, output_tokens=10), items[1])
+
+
+class TestAgentServiceTurnRunning(unittest.IsolatedAsyncioTestCase):
+    async def test_a_turn_runs_from_thinking_until_idle(self) -> None:
+        text = AgentText(message_id="m1", text="Hello", is_final=True)
+        service = AgentService(FakeAgentSdk(events=[text]), auto_approve_tools=False)
+        service.add_prompt_to_queue("fix the tests")
+        stream = service.consume_prompt_queue()
+        running = []
+
+        async for item in stream:
+            running.append(service.is_turn_running)
+            if item is AgentStatus.IDLE:
+                break
+        await stream.aclose()
+
+        self.assertEqual([True, True, False], running)
 
 
 class TestAgentServicePassThrough(unittest.IsolatedAsyncioTestCase):

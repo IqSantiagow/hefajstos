@@ -39,6 +39,12 @@ SDK errors reach a command only as `AgentSdkError` (the adapter wraps them); the
 - ↑↓, tab and esc are bindings on `WidgetPromptInput`; `check_action` turns them off while the list is closed and Textual passes the key on. No `priority`.
 - `ctrl+x` (abort) on `ChatScreen` does need `priority=True`: `Input` takes it as "cut".
 
+## /new
+
+- Opens a fresh SDK session with the current model and settings, then closes the old one - a failed start keeps the old session.
+- Refused while `AgentService.is_turn_running`: the running turn streams from the old session, so swapping it under the turn would hang it.
+- Resets the token count; `/clear` only clears the feed and keeps the history.
+
 ## /model
 
 - Provider knobs are data: `ModelChoice.settings` is a list of `ModelSetting(key, label, choices)`. A new provider brings new data, not a new picker.

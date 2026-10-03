@@ -13,6 +13,7 @@ class AgentProtocol(Protocol):
     model: str
     model_settings: dict[str, str]
     working_directory: str
+    is_turn_running: bool
 
     async def start(self) -> None: ...
 
@@ -29,6 +30,8 @@ class AgentProtocol(Protocol):
     ) -> bool: ...
 
     async def abort_turn(self) -> None: ...
+
+    async def new_session(self) -> None: ...
 
     async def list_models(self) -> list[ModelChoice]: ...
 

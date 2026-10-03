@@ -143,6 +143,9 @@ class StubAgentAdapter:
         self.__was_aborted = True
         self.answer_permission(self.__permission_id, PermissionDecision.REJECT)
 
+    async def new_session(self) -> None:
+        pass
+
     async def stop(self) -> None:
         self.__was_aborted = True
         self.answer_permission(
