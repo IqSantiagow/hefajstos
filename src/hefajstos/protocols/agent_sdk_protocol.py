@@ -2,21 +2,26 @@ from collections.abc import AsyncGenerator
 from typing import Protocol
 
 from hefajstos.services.models.agent_events import AgentEvent, PermissionDecision
+from hefajstos.services.models.model_choice import ModelChoice, ModelSelection
 
 
 class AgentSdkProtocol(Protocol):
     model: str
+    # setting key -> choice, e.g. {"reasoning_effort": "high"}
+    model_settings: dict[str, str]
     working_directory: str
 
     async def start(self) -> None: ...
 
-    def send_and_stream(self, prompt: str) -> AsyncGenerator[AgentEvent, None]:
-        """Send the prompt and yield what the agent does until it is finished."""
-        ...
+    def send_and_stream(self, prompt: str) -> AsyncGenerator[AgentEvent, None]: ...
 
-    def answer_permission(self, request_id: str, decision: PermissionDecision) -> bool:
-        """False means the request is gone - it timed out or was aborted."""
-        ...
+    def answer_permission(
+        self, request_id: str, decision: PermissionDecision
+    ) -> bool: ...
+
+    async def list_models(self) -> list[ModelChoice]: ...
+
+    async def set_model(self, selection: ModelSelection) -> None: ...
 
     async def abort(self) -> None: ...
 

@@ -1,6 +1,6 @@
 import logging
 
-from copilot import SessionEvent
+from copilot import ModelInfo, SessionEvent
 from copilot.generated.session_events import (
     AssistantMessageData,
     AssistantMessageDeltaData,
@@ -34,6 +34,11 @@ from hefajstos.services.models.agent_events import (
     ToolStarted,
     TurnFinished,
 )
+from hefajstos.services.models.model_choice import (
+    PROVIDER_DEFAULT,
+    ModelChoice,
+    ModelSetting,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +47,12 @@ MAX_TOOL_RESULT_CHARACTERS = 2000
 
 # A write request carries the whole diff. The modal has to stay readable.
 MAX_PERMISSION_DETAIL_CHARACTERS = 1500
+
+# Setting keys of a Copilot ModelChoice - the adapter turns them back into
+# set_model() arguments.
+REASONING_EFFORT = "reasoning_effort"
+CONTEXT_TIER = "context_tier"
+LONG_CONTEXT = "long_context"
 
 
 def map_session_event(event: SessionEvent) -> AgentEvent | None:
@@ -160,6 +171,48 @@ def describe_permission_request(request: PermissionRequest) -> tuple[str, str, s
 
     logger.warning("Unknown permission request type %s", type(request).__name__)
     return "unknown action", type(request).__name__, ""
+
+
+def map_model(model: ModelInfo) -> ModelChoice:
+    """Only the settings this model really has. 'auto' has none."""
+    settings = []
+
+    if model.supported_reasoning_efforts:
+        settings.append(
+            ModelSetting(
+                key=REASONING_EFFORT,
+                label="Reasoning effort",
+                choices=[PROVIDER_DEFAULT, *model.supported_reasoning_efforts],
+            )
+        )
+
+    if _has_long_context(model):
+        settings.append(
+            ModelSetting(
+                key=CONTEXT_TIER,
+                label="Context",
+                choices=[PROVIDER_DEFAULT, LONG_CONTEXT],
+            )
+        )
+
+    return ModelChoice(
+        id=model.id,
+        name=model.name,
+        context_window_tokens=model.capabilities.limits.max_context_window_tokens,
+        settings=settings,
+    )
+
+
+def sdk_setting_value(settings: dict[str, str], key: str) -> str | None:
+    """None tells the SDK to use the model's normal behavior."""
+    value = settings.get(key, PROVIDER_DEFAULT)
+    return None if value == PROVIDER_DEFAULT else value
+
+
+def _has_long_context(model: ModelInfo) -> bool:
+    # Copilot models advertise the long context tier through its price.
+    prices = model.billing.token_prices if model.billing else None
+    return prices is not None and prices.long_context is not None
 
 
 def _tool_result_text(data: ToolExecutionCompleteData) -> str:

@@ -89,6 +89,10 @@ class WidgetChatFeed(VerticalScroll):
             Static(notice.content, markup=False, classes=f"chat-entry {entry_class}")
         )
 
+    def clear(self) -> None:
+        """/clear - only the screen forgets, the agent keeps its history."""
+        self.remove_children()
+
     def __add_entry(self, widget) -> None:
         self.mount(widget)
 

@@ -12,6 +12,10 @@ from hefajstos.services.models.agent_events import (
     PermissionRequested,
     TokensUsed,
 )
+from hefajstos.services.models.model_choice import (
+    ModelChoice,
+    ModelSelection,
+)
 
 READ_TIMEOUT_SECONDS = 1.0
 
@@ -21,7 +25,13 @@ class FakeAgentSdk:
 
     def __init__(self, events: list[AgentEvent] | None = None) -> None:
         self.model = "gpt-5"
+        self.model_settings: dict[str, str] = {}
         self.working_directory = "/tmp/project"
+        self.models = [
+            ModelChoice(
+                id="gpt-5", name="GPT-5", context_window_tokens=None, settings=[]
+            )
+        ]
         self.events = events or []
         self.sent_prompts: list[str] = []
         self.answers: list[tuple[str, PermissionDecision]] = []
@@ -41,6 +51,13 @@ class FakeAgentSdk:
     def answer_permission(self, request_id: str, decision: PermissionDecision) -> bool:
         self.answers.append((request_id, decision))
         return True
+
+    async def list_models(self) -> list[ModelChoice]:
+        return self.models
+
+    async def set_model(self, selection: ModelSelection) -> None:
+        self.model = selection.model_id
+        self.model_settings = selection.settings
 
     async def abort(self) -> None:
         self.calls.append("abort")
@@ -184,3 +201,25 @@ class TestAgentServicePassThrough(unittest.IsolatedAsyncioTestCase):
         service.answer_permission("req-3", PermissionDecision.REJECT)
 
         self.assertEqual([("req-3", PermissionDecision.REJECT)], sdk.answers)
+
+
+class TestAgentServiceModels(unittest.IsolatedAsyncioTestCase):
+    async def test_lists_the_models_of_the_sdk(self) -> None:
+        sdk = FakeAgentSdk()
+
+        models = await AgentService(sdk, auto_approve_tools=False).list_models()
+
+        self.assertEqual(sdk.models, models)
+
+    async def test_the_model_is_current_after_a_switch(self) -> None:
+        """A copy taken in __init__ would still say gpt-5 in the footer."""
+        service = AgentService(FakeAgentSdk(), auto_approve_tools=False)
+
+        await service.set_model(
+            ModelSelection(
+                model_id="claude-sonnet-5", settings={"reasoning_effort": "high"}
+            )
+        )
+
+        self.assertEqual("claude-sonnet-5", service.model)
+        self.assertEqual({"reasoning_effort": "high"}, service.model_settings)

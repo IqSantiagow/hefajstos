@@ -14,17 +14,24 @@ from hefajstos.presentation.view_models.chat_item_view_model import (
     ToolResultViewModel,
     UserMessageViewModel,
 )
+from hefajstos.presentation.view_models.command_view_model import ClearFeedViewModel
 from hefajstos.presentation.view_models.footer_view_model import TokensViewModel
+from hefajstos.presentation.view_models.model_picker_view_model import (
+    ModelChangedViewModel,
+    ModelPickerViewModel,
+)
 from hefajstos.presentation.view_models.permission_view_model import PermissionViewModel
 from hefajstos.services.models.agent_events import AgentStatus, PermissionDecision
 from hefajstos.ui.screens.chat.modal_permission_screen import ModalPermissionScreen
 from hefajstos.ui.screens.chat.widgets.widget_chat_feed import WidgetChatFeed
 from hefajstos.ui.screens.chat.widgets.widget_forge_logo import WidgetForgeLogo
+from hefajstos.ui.screens.chat.widgets.widget_model_picker import WidgetModelPicker
 from hefajstos.ui.screens.chat.widgets.widget_prompt_input import WidgetPromptInput
 from hefajstos.ui.screens.chat.widgets.widget_status_footer import WidgetStatusFooter
 from hefajstos.ui.screens.chat.widgets.widget_working_indicator import (
     WidgetWorkingIndicator,
 )
+from hefajstos.ui.widgets.widget_panel_slot import WidgetPanelSlot
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +46,8 @@ DECISION_LABELS = {
     PermissionDecision.USER_NOT_AVAILABLE: "no answer",
 }
 
+MODEL_UNCHANGED_MESSAGE = "Model not changed."
+
 
 class ChatScreen(Screen):
     BINDINGS = [
@@ -52,6 +61,7 @@ class ChatScreen(Screen):
     def compose(self) -> ComposeResult:
         yield WidgetChatFeed(id="chat-feed")
         yield WidgetWorkingIndicator(id="working-indicator")
+        yield WidgetPanelSlot(id="panel-slot")
         yield WidgetPromptInput(id="prompt-row")
         yield WidgetStatusFooter(id="status-footer")
 
@@ -116,6 +126,53 @@ class ChatScreen(Screen):
         self.feed.add_user_message(UserMessageViewModel(content=message.prompt))
         self.chat_repository.send_message(message.prompt)
 
+    @on(WidgetPromptInput.CommandPrefixChanged)
+    def handle_command_prefix_changed(
+        self, message: WidgetPromptInput.CommandPrefixChanged
+    ) -> None:
+        self.prompt_input.show_commands(
+            self.chat_repository.list_commands(message.prefix)
+        )
+
+    @on(WidgetPromptInput.CommandSubmitted)
+    def handle_command_submitted(
+        self, message: WidgetPromptInput.CommandSubmitted
+    ) -> None:
+        # A command never goes into the prompt queue, so it also works mid-turn.
+        self.feed.add_user_message(UserMessageViewModel(content=message.text))
+        self.run_command_worker(message.text)
+
+    @work
+    async def run_command_worker(self, text: str) -> None:
+        outcome = await self.chat_repository.run_command(text)
+        if isinstance(outcome, ClearFeedViewModel):
+            self.feed.clear()
+        elif isinstance(outcome, NoticeViewModel):
+            self.feed.add_notice(outcome)
+        elif isinstance(outcome, ModelPickerViewModel):
+            await self.pick_model(outcome)
+
+    async def pick_model(self, picker: ModelPickerViewModel) -> None:
+        self.prompt_input.set_locked(True)
+        # No try/finally: the worker is only cancelled when the app closes,
+        # and then there is no prompt left to unlock.
+        selection = await self.panel_slot.show(WidgetModelPicker(picker))
+        self.prompt_input.set_locked(False)
+        self.prompt_input.focus_prompt()
+
+        if selection is None:
+            self.feed.add_notice(
+                NoticeViewModel(content=MODEL_UNCHANGED_MESSAGE, is_error=False)
+            )
+            return
+
+        result = await self.chat_repository.change_model(selection)
+        if isinstance(result, ModelChangedViewModel):
+            self.status_footer.show_agent_info(result.agent_info)
+            self.feed.add_notice(result.notice)
+        else:
+            self.feed.add_notice(result)
+
     async def action_abort_turn(self) -> None:
         await self.chat_repository.abort_turn()
 
@@ -134,6 +191,10 @@ class ChatScreen(Screen):
     @property
     def status_footer(self) -> WidgetStatusFooter:
         return self.query_one("#status-footer", WidgetStatusFooter)
+
+    @property
+    def panel_slot(self) -> WidgetPanelSlot:
+        return self.query_one("#panel-slot", WidgetPanelSlot)
 
     @property
     def prompt_input(self) -> WidgetPromptInput:

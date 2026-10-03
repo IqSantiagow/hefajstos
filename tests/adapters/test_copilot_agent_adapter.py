@@ -16,13 +16,16 @@ from hefajstos.adapters.copilot_agent_adapter import (
     CopilotAgentAdapter,
     _to_copilot_decision,
 )
+from hefajstos.services.models.agent_sdk_error import AgentSdkError
 from hefajstos.services.models.agent_events import (
     AgentError,
     AgentText,
     PermissionDecision,
     PermissionRequested,
 )
+from hefajstos.services.models.model_choice import PROVIDER_DEFAULT, ModelSelection
 from tests.agent_event_fixtures import (
+    make_model_info,
     make_session_error,
     make_session_idle,
     make_text_delta,
@@ -40,6 +43,8 @@ class FakeSession:
         self.sent_prompts: list[str] = []
         self.calls: list[str] = []
         self.events_on_send: list = []
+        self.set_model_calls: list[tuple[str, dict[str, Any]]] = []
+        self.set_model_failure: Exception | None = None
 
     def on(self, handler) -> Any:
         self.handler = handler
@@ -52,6 +57,11 @@ class FakeSession:
         self.sent_prompts.append(prompt)
         for event in self.events_on_send:
             self.handler(event)
+
+    async def set_model(self, model: str, **kwargs) -> None:
+        if self.set_model_failure is not None:
+            raise self.set_model_failure
+        self.set_model_calls.append((model, kwargs))
 
     async def abort(self) -> None:
         self.calls.append("abort")
@@ -374,6 +384,79 @@ class TestCopilotAgentAdapterPermissions(CopilotAgentAdapterTestCase):
         await self.adapter.stop()
 
         self.assertIsInstance(await asking, PermissionDecisionUserNotAvailable)
+
+
+class TestCopilotAgentAdapterModels(CopilotAgentAdapterTestCase):
+    async def test_lists_the_models_as_choices(self) -> None:
+        await self.adapter.start()
+        self.client.models = [make_model_info(id="gpt-5.4", long_context=True)]
+
+        models = await self.adapter.list_models()
+
+        self.assertEqual(["gpt-5.4"], [model.id for model in models])
+        self.assertEqual(
+            ["reasoning_effort", "context_tier"],
+            [setting.key for setting in models[0].settings],
+        )
+
+    async def test_a_failing_model_list_becomes_an_agent_sdk_error(self) -> None:
+        await self.adapter.start()
+        self.client.list_models_failure = ConnectionError("offline")
+
+        with self.assertRaises(AgentSdkError):
+            await self.adapter.list_models()
+
+    async def test_listing_before_the_start_is_an_agent_sdk_error(self) -> None:
+        with self.assertRaises(AgentSdkError):
+            await self.adapter.list_models()
+
+    async def test_switching_passes_the_chosen_settings_to_the_sdk(self) -> None:
+        await self.adapter.start()
+
+        await self.adapter.set_model(
+            ModelSelection(
+                model_id="gpt-5.4",
+                settings={"reasoning_effort": "high", "context_tier": "long_context"},
+            )
+        )
+
+        self.assertEqual(
+            [("gpt-5.4", {"reasoning_effort": "high", "context_tier": "long_context"})],
+            self.session.set_model_calls,
+        )
+
+    async def test_the_providers_default_is_sent_as_nothing(self) -> None:
+        await self.adapter.start()
+
+        await self.adapter.set_model(
+            ModelSelection(
+                model_id="gpt-5.4", settings={"reasoning_effort": PROVIDER_DEFAULT}
+            )
+        )
+
+        self.assertEqual(
+            [("gpt-5.4", {"reasoning_effort": None, "context_tier": None})],
+            self.session.set_model_calls,
+        )
+
+    async def test_a_switch_updates_the_model_and_its_settings(self) -> None:
+        await self.adapter.start()
+
+        await self.adapter.set_model(
+            ModelSelection(model_id="gpt-5.4", settings={"reasoning_effort": "low"})
+        )
+
+        self.assertEqual("gpt-5.4", self.adapter.model)
+        self.assertEqual({"reasoning_effort": "low"}, self.adapter.model_settings)
+
+    async def test_a_failed_switch_keeps_the_old_model(self) -> None:
+        await self.adapter.start()
+        self.session.set_model_failure = RuntimeError("unknown model")
+
+        with self.assertRaises(AgentSdkError):
+            await self.adapter.set_model(ModelSelection(model_id="nope", settings={}))
+
+        self.assertEqual("auto", self.adapter.model)
 
 
 class TestCopilotAgentAdapterShutdown(CopilotAgentAdapterTestCase):

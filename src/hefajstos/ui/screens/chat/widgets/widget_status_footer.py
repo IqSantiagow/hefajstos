@@ -45,7 +45,9 @@ class WidgetStatusFooter(VerticalGroup):
             yield Label("", id="footer-model", markup=False)
 
     def show_agent_info(self, agent_info: AgentInfoViewModel) -> None:
-        self.query_one("#footer-model", Label).update(agent_info.model)
+        self.query_one("#footer-model", Label).update(
+            " · ".join([agent_info.model, *agent_info.model_settings])
+        )
         self.query_one("#footer-directory", Label).update(
             shorten_home(agent_info.working_directory)
         )

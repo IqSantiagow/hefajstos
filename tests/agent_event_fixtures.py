@@ -1,7 +1,19 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from copilot import SessionEvent, SessionEventType
+from copilot import (
+    ModelBilling,
+    ModelCapabilities,
+    ModelInfo,
+    ModelLimits,
+    ModelSupports,
+    SessionEvent,
+    SessionEventType,
+)
+from copilot.generated.rpc import (
+    ModelBillingTokenPrices,
+    ModelBillingTokenPricesLongContext,
+)
 from copilot.generated.session_events import (
     AssistantMessageData,
     AssistantMessageDeltaData,
@@ -95,3 +107,26 @@ def make_session_error(**overrides) -> SessionEvent:
     return make_session_event(
         SessionErrorData(**defaults), SessionEventType.SESSION_ERROR
     )
+
+
+def make_model_info(*, long_context: bool = False, **overrides) -> ModelInfo:
+    """Shaped like a real Copilot model: the long context tier shows in its price."""
+    long_context_prices = (
+        ModelBillingTokenPricesLongContext(max_prompt_tokens=936_000)
+        if long_context
+        else None
+    )
+    defaults = dict(
+        id="claude-sonnet-5",
+        name="Claude Sonnet 5",
+        capabilities=ModelCapabilities(
+            supports=ModelSupports(reasoning_effort=True),
+            limits=ModelLimits(max_context_window_tokens=1_000_000),
+        ),
+        billing=ModelBilling(
+            token_prices=ModelBillingTokenPrices(long_context=long_context_prices)
+        ),
+        supported_reasoning_efforts=["low", "medium", "high"],
+    )
+    defaults.update(overrides)
+    return ModelInfo(**defaults)  # type: ignore[arg-type]

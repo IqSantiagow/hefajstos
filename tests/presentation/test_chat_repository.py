@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 
 from hefajstos.presentation.chat_repository import ChatRepository
 from hefajstos.services.models.agent_events import PermissionDecision
+from hefajstos.services.models.model_choice import ModelSelection
 
 
 class FakeCallUseCase:
@@ -25,6 +26,16 @@ class FakeAwaitableUseCase:
         return self.answer
 
 
+class FakeAsyncCallUseCase:
+    def __init__(self, answer=None) -> None:
+        self.answer = answer
+        self.calls: list[tuple] = []
+
+    async def __call__(self, *args):
+        self.calls.append(args)
+        return self.answer
+
+
 class FakeStreamUseCase:
     def __init__(self, items: list) -> None:
         self.items = items
@@ -42,6 +53,9 @@ def make_repository(**overrides) -> ChatRepository:
         send_message_use_case=None,
         answer_permission_use_case=None,
         abort_turn_use_case=None,
+        list_commands_use_case=None,
+        run_command_use_case=None,
+        change_model_use_case=None,
     )
     defaults.update(overrides)
     return ChatRepository(**defaults)  # type: ignore[arg-type]
@@ -100,3 +114,34 @@ class TestChatRepositoryCommands(unittest.TestCase):
 
         self.assertTrue(answered)
         self.assertEqual([("req-1", PermissionDecision.APPROVE_ONCE)], use_case.calls)
+
+
+class TestChatRepositorySlashCommands(unittest.IsolatedAsyncioTestCase):
+    def test_list_commands_passes_the_prefix_and_returns_the_rows(self) -> None:
+        use_case = FakeCallUseCase(answer=["row"])
+
+        rows = make_repository(list_commands_use_case=use_case).list_commands("/mo")
+
+        self.assertEqual(["row"], rows)
+        self.assertEqual([("/mo",)], use_case.calls)
+
+    async def test_run_command_passes_the_text_and_returns_the_outcome(self) -> None:
+        use_case = FakeAsyncCallUseCase(answer="outcome")
+
+        outcome = await make_repository(run_command_use_case=use_case).run_command(
+            "/clear"
+        )
+
+        self.assertEqual("outcome", outcome)
+        self.assertEqual([("/clear",)], use_case.calls)
+
+    async def test_change_model_passes_the_selection_through(self) -> None:
+        use_case = FakeAsyncCallUseCase(answer="changed")
+        selection = ModelSelection(model_id="gpt-5", settings={})
+
+        result = await make_repository(change_model_use_case=use_case).change_model(
+            selection
+        )
+
+        self.assertEqual("changed", result)
+        self.assertEqual([(selection,)], use_case.calls)

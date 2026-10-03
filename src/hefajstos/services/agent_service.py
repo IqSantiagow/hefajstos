@@ -12,6 +12,7 @@ from hefajstos.services.models.agent_events import (
     PermissionRequested,
     TokensUsed,
 )
+from hefajstos.services.models.model_choice import ModelChoice, ModelSelection
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +20,20 @@ logger = logging.getLogger(__name__)
 class AgentService:
     def __init__(self, agent_sdk: AgentSdkProtocol, auto_approve_tools: bool) -> None:
         self.agent_sdk = agent_sdk
-        self.model = agent_sdk.model
         self.working_directory = agent_sdk.working_directory
         self.__auto_approve_tools = auto_approve_tools
         self.__prompt_queue: asyncio.Queue[str] = asyncio.Queue()
         self.__input_tokens = 0
         self.__output_tokens = 0
+
+    @property
+    def model(self) -> str:
+        # Read through every time: /model changes it on the adapter.
+        return self.agent_sdk.model
+
+    @property
+    def model_settings(self) -> dict[str, str]:
+        return self.agent_sdk.model_settings
 
     async def start(self) -> None:
         await self.agent_sdk.start()
@@ -40,6 +49,12 @@ class AgentService:
 
     async def abort_turn(self) -> None:
         await self.agent_sdk.abort()
+
+    async def list_models(self) -> list[ModelChoice]:
+        return await self.agent_sdk.list_models()
+
+    async def set_model(self, selection: ModelSelection) -> None:
+        await self.agent_sdk.set_model(selection)
 
     async def consume_prompt_queue(
         self,

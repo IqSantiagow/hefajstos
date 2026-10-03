@@ -13,15 +13,21 @@ from copilot.rpc import (
 )
 
 from hefajstos.adapters.copilot_event_mapper import (
+    CONTEXT_TIER,
+    REASONING_EFFORT,
+    map_model,
     map_permission_request,
     map_session_event,
+    sdk_setting_value,
 )
+from hefajstos.services.models.agent_sdk_error import AgentSdkError
 from hefajstos.services.models.agent_events import (
     AgentError,
     AgentEvent,
     PermissionDecision,
     TurnFinished,
 )
+from hefajstos.services.models.model_choice import ModelChoice, ModelSelection
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +42,8 @@ class CopilotAgentAdapter:
         permission_timeout_seconds: int,
     ) -> None:
         self.model = model
+        # The session starts with the model's normal behavior; /model changes it.
+        self.model_settings: dict[str, str] = {}
         self.working_directory = working_directory
         self.permission_timeout_seconds = permission_timeout_seconds
         self.__client: CopilotClient | None = None
@@ -84,6 +92,31 @@ class CopilotAgentAdapter:
             return False
         future.set_result(decision)
         return True
+
+    async def list_models(self) -> list[ModelChoice]:
+        if self.__client is None:
+            raise AgentSdkError("The agent is not started yet.")
+        try:
+            models = await self.__client.list_models()
+        except Exception as e:
+            raise AgentSdkError(f"Could not list the models: {e}") from e
+        return [map_model(model) for model in models]
+
+    async def set_model(self, selection: ModelSelection) -> None:
+        if self.__session is None:
+            raise AgentSdkError("The agent is not started yet.")
+        try:
+            await self.__session.set_model(
+                selection.model_id,
+                reasoning_effort=sdk_setting_value(
+                    selection.settings, REASONING_EFFORT
+                ),
+                context_tier=sdk_setting_value(selection.settings, CONTEXT_TIER),
+            )
+        except Exception as e:
+            raise AgentSdkError(f"Could not switch to {selection.model_id}: {e}") from e
+        self.model = selection.model_id
+        self.model_settings = dict(selection.settings)
 
     async def abort(self) -> None:
         # The agent waits for these answers, so without this abort would wait too.

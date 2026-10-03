@@ -10,6 +10,7 @@ from hefajstos.services.models.agent_events import (
     TokensUsed,
     ToolStarted,
 )
+from hefajstos.services.models.model_choice import ModelSelection
 
 READ_TIMEOUT_SECONDS = 1.0
 
@@ -74,3 +75,37 @@ class TestStubAgentAdapter(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertFalse(answered)
+
+
+class TestStubAgentAdapterModels(unittest.IsolatedAsyncioTestCase):
+    async def test_the_configured_model_is_listed_first(self) -> None:
+        adapter = StubAgentAdapter(model="claude-sonnet-5", working_directory="/tmp")
+
+        models = await adapter.list_models()
+
+        self.assertEqual("claude-sonnet-5", models[0].id)
+
+    async def test_a_stub_model_is_not_listed_twice(self) -> None:
+        adapter = StubAgentAdapter(model="stub-small", working_directory="/tmp")
+
+        ids = [model.id for model in await adapter.list_models()]
+
+        self.assertEqual(1, ids.count("stub-small"))
+
+    async def test_offers_a_model_with_settings_and_one_without(self) -> None:
+        adapter = StubAgentAdapter(model="stub", working_directory="/tmp")
+
+        settings_counts = {len(model.settings) for model in await adapter.list_models()}
+
+        self.assertIn(0, settings_counts)
+        self.assertTrue(any(count > 0 for count in settings_counts))
+
+    async def test_a_switch_updates_the_model_and_its_settings(self) -> None:
+        adapter = StubAgentAdapter(model="stub", working_directory="/tmp")
+
+        await adapter.set_model(
+            ModelSelection(model_id="stub-large", settings={"reasoning_effort": "max"})
+        )
+
+        self.assertEqual("stub-large", adapter.model)
+        self.assertEqual({"reasoning_effort": "max"}, adapter.model_settings)

@@ -6,10 +6,12 @@ from hefajstos.services.models.agent_events import (
     AgentStatus,
     PermissionDecision,
 )
+from hefajstos.services.models.model_choice import ModelChoice, ModelSelection
 
 
 class AgentProtocol(Protocol):
     model: str
+    model_settings: dict[str, str]
     working_directory: str
 
     async def start(self) -> None: ...
@@ -27,3 +29,7 @@ class AgentProtocol(Protocol):
     ) -> bool: ...
 
     async def abort_turn(self) -> None: ...
+
+    async def list_models(self) -> list[ModelChoice]: ...
+
+    async def set_model(self, selection: ModelSelection) -> None: ...

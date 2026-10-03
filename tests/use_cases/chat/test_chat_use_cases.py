@@ -18,6 +18,7 @@ from hefajstos.services.models.agent_events import (
     ToolStarted,
     TurnFinished,
 )
+from hefajstos.services.models.model_choice import ModelChoice, ModelSelection
 from hefajstos.use_cases.chat.abort_turn_use_case import AbortTurnUseCase
 from hefajstos.use_cases.chat.answer_permission_use_case import (
     AnswerPermissionUseCase,
@@ -39,6 +40,7 @@ class FakeAgent:
         answer_result: bool = True,
     ) -> None:
         self.model = "gpt-5"
+        self.model_settings: dict[str, str] = {}
         self.working_directory = "/opt/project"
         self.items = items or []
         self.answer_result = answer_result
@@ -70,6 +72,13 @@ class FakeAgent:
     async def abort_turn(self) -> None:
         self.aborts += 1
 
+    async def list_models(self) -> list[ModelChoice]:
+        return []
+
+    async def set_model(self, selection: ModelSelection) -> None:
+        self.model = selection.model_id
+        self.model_settings = selection.settings
+
 
 def make_permission(**overrides) -> PermissionRequested:
     defaults = dict(
@@ -96,6 +105,14 @@ class TestLifecycleUseCases(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual("gpt-5", agent_info.model)
         self.assertEqual("/opt/project", agent_info.working_directory)
+
+    async def test_start_shows_only_settings_that_are_not_the_default(self) -> None:
+        agent = FakeAgent()
+        agent.model_settings = {"reasoning_effort": "high", "context_tier": "default"}
+
+        agent_info = await StartAgentUseCase(agent_protocol=agent)()
+
+        self.assertEqual(["high"], agent_info.model_settings)
 
     async def test_shutdown_shuts_the_agent_down(self) -> None:
         agent = FakeAgent()

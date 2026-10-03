@@ -153,6 +153,87 @@ WidgetForgeLogo > .forge--ember         { color: $error; }
 }
 
 /* ============================================================
+   Command list - opens above the input when the prompt starts with /
+   (WidgetCommandList, inside WidgetPromptInput)
+   ============================================================ */
+#command-list {
+    width: 100%;
+    height: auto;
+    max-height: 8;
+    border: none;
+    background: $surface;
+    padding: 0;
+    scrollbar-size-vertical: 1;
+}
+
+#command-list > .option-list--option {
+    padding: 0 1;
+    color: $muted-color;
+}
+
+#command-list > .option-list--option-highlighted {
+    background: $panel;
+    color: $primary;
+    text-style: none;
+}
+
+/* ============================================================
+   Panel slot - pickers above the prompt, one at a time
+   (WidgetPanelSlot, WidgetModelPicker)
+   ============================================================ */
+#panel-slot {
+    width: 100%;
+    height: auto;
+}
+
+WidgetModelPicker {
+    width: 100%;
+    height: auto;
+    padding: 0 1;
+    border-top: solid $primary;
+}
+
+.picker-title {
+    color: $primary;
+    text-style: bold;
+}
+
+.picker-models {
+    width: 100%;
+    height: auto;
+    max-height: 12;
+    margin-top: 1;
+    scrollbar-size-vertical: 1;
+    scrollbar-background: $surface;
+    scrollbar-color: $border-muted;
+}
+
+.picker-row {
+    width: 100%;
+    height: 1;
+    padding: 0 1;
+    color: $muted-color;
+}
+
+.picker-row.-selected {
+    background: $panel;
+    color: $primary;
+}
+
+.picker-settings {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
+    padding: 0 1;
+}
+
+.picker-hint {
+    width: 100%;
+    color: $dim-color;
+    margin-top: 1;
+}
+
+/* ============================================================
    Status footer
    (WidgetStatusFooter)
    ============================================================ */

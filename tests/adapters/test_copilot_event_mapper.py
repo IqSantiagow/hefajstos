@@ -11,8 +11,10 @@ from copilot.generated.session_events import (
 from hefajstos.adapters.copilot_event_mapper import (
     MAX_PERMISSION_DETAIL_CHARACTERS,
     MAX_TOOL_RESULT_CHARACTERS,
+    map_model,
     map_permission_request,
     map_session_event,
+    sdk_setting_value,
 )
 from hefajstos.services.models.agent_events import (
     AgentError,
@@ -22,7 +24,9 @@ from hefajstos.services.models.agent_events import (
     ToolStarted,
     TurnFinished,
 )
+from hefajstos.services.models.model_choice import PROVIDER_DEFAULT
 from tests.agent_event_fixtures import (
+    make_model_info,
     make_session_error,
     make_session_idle,
     make_text_delta,
@@ -235,3 +239,55 @@ class TestDescribePermissionRequest(unittest.TestCase):
         self.assertEqual("MCP tool", permission.action)
         self.assertEqual("github/create_issue", permission.summary)
         self.assertEqual("Create issue", permission.detail)
+
+
+class TestMapModel(unittest.TestCase):
+    def test_keeps_the_id_the_name_and_the_context_window(self) -> None:
+        model = map_model(make_model_info(id="gpt-5.4", name="GPT-5.4"))
+
+        self.assertEqual("gpt-5.4", model.id)
+        self.assertEqual("GPT-5.4", model.name)
+        self.assertEqual(1_000_000, model.context_window_tokens)
+
+    def test_the_reasoning_effort_starts_with_the_providers_default(self) -> None:
+        model = map_model(make_model_info(supported_reasoning_efforts=["low", "high"]))
+
+        self.assertEqual(["reasoning_effort"], [s.key for s in model.settings])
+        self.assertEqual([PROVIDER_DEFAULT, "low", "high"], model.settings[0].choices)
+
+    def test_a_model_without_reasoning_effort_has_no_effort_setting(self) -> None:
+        model = map_model(make_model_info(supported_reasoning_efforts=None))
+
+        self.assertEqual([], model.settings)
+
+    def test_a_long_context_price_adds_the_context_setting(self) -> None:
+        model = map_model(make_model_info(long_context=True))
+
+        context = model.settings[-1]
+        self.assertEqual("context_tier", context.key)
+        self.assertEqual([PROVIDER_DEFAULT, "long_context"], context.choices)
+
+    def test_a_model_without_billing_has_no_context_setting(self) -> None:
+        """'auto' comes without billing and without any setting."""
+        model = map_model(
+            make_model_info(id="auto", billing=None, supported_reasoning_efforts=None)
+        )
+
+        self.assertEqual([], model.settings)
+
+
+class TestSdkSettingValue(unittest.TestCase):
+    def test_the_providers_default_is_not_sent(self) -> None:
+        value = sdk_setting_value(
+            {"reasoning_effort": PROVIDER_DEFAULT}, "reasoning_effort"
+        )
+
+        self.assertIsNone(value)
+
+    def test_a_missing_setting_is_not_sent(self) -> None:
+        self.assertIsNone(sdk_setting_value({}, "context_tier"))
+
+    def test_a_chosen_value_is_sent_as_it_is(self) -> None:
+        value = sdk_setting_value({"reasoning_effort": "high"}, "reasoning_effort")
+
+        self.assertEqual("high", value)

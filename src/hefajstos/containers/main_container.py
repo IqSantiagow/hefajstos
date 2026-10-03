@@ -5,6 +5,9 @@ from hefajstos.adapters.stub_agent_adapter import StubAgentAdapter
 from hefajstos.config.config import AppConfig
 from hefajstos.presentation.chat_repository import ChatRepository
 from hefajstos.services.agent_service import AgentService
+from hefajstos.services.commands.clear_command import ClearCommand
+from hefajstos.services.commands.model_command import ModelCommand
+from hefajstos.services.commands_service import CommandsService
 from hefajstos.use_cases.chat.abort_turn_use_case import AbortTurnUseCase
 from hefajstos.use_cases.chat.answer_permission_use_case import (
     AnswerPermissionUseCase,
@@ -15,6 +18,9 @@ from hefajstos.use_cases.chat.start_agent_use_case import StartAgentUseCase
 from hefajstos.use_cases.chat.stream_agent_responses_use_case import (
     StreamAgentResponsesUseCase,
 )
+from hefajstos.use_cases.commands.change_model_use_case import ChangeModelUseCase
+from hefajstos.use_cases.commands.list_commands_use_case import ListCommandsUseCase
+from hefajstos.use_cases.commands.run_command_use_case import RunCommandUseCase
 
 
 class Container(containers.DeclarativeContainer):
@@ -47,6 +53,14 @@ class Container(containers.DeclarativeContainer):
         auto_approve_tools=config.agent.auto_approve,
     )
 
+    # ----- SLASH COMMANDS -----
+    model_command = providers.Singleton(ModelCommand, agent_protocol=agent_service)
+    clear_command = providers.Singleton(ClearCommand)
+    commands_service = providers.Singleton(
+        CommandsService,
+        commands=providers.List(model_command, clear_command),
+    )
+
     # ----- USE CASES -----
     start_agent_use_case = providers.Factory(
         StartAgentUseCase, agent_protocol=agent_service
@@ -66,6 +80,15 @@ class Container(containers.DeclarativeContainer):
     abort_turn_use_case = providers.Factory(
         AbortTurnUseCase, agent_protocol=agent_service
     )
+    list_commands_use_case = providers.Factory(
+        ListCommandsUseCase, commands_protocol=commands_service
+    )
+    run_command_use_case = providers.Factory(
+        RunCommandUseCase, commands_protocol=commands_service
+    )
+    change_model_use_case = providers.Factory(
+        ChangeModelUseCase, agent_protocol=agent_service
+    )
 
     # ----- REPOSITORIES -----
     chat_repository = providers.Singleton(
@@ -76,4 +99,7 @@ class Container(containers.DeclarativeContainer):
         send_message_use_case=send_message_use_case,
         answer_permission_use_case=answer_permission_use_case,
         abort_turn_use_case=abort_turn_use_case,
+        list_commands_use_case=list_commands_use_case,
+        run_command_use_case=run_command_use_case,
+        change_model_use_case=change_model_use_case,
     )

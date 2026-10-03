@@ -27,13 +27,28 @@ async def main() -> int:
         status = await client.get_auth_status()
         print("auth:", status)
         models = await client.list_models()
-        print("models:", [getattr(m, "id", getattr(m, "name", m)) for m in models])
+        print("models:")
+        for model in models:
+            print_model(model)
     except Exception as e:
         print(f"The client started, but the request failed: {type(e).__name__}: {e}")
         return 1
     finally:
         await client.stop()
     return 0
+
+
+def print_model(model) -> None:
+    """What /model builds its picker from: efforts, context window, long context."""
+    limits = model.capabilities.limits
+    prices = model.billing.token_prices if model.billing else None
+    long_context = prices.long_context if prices else None
+    print(
+        f"  {model.id:<28} effort={model.supported_reasoning_efforts} "
+        f"default={model.default_reasoning_effort} "
+        f"context={limits.max_context_window_tokens if limits else None} "
+        f"long_context={long_context.max_prompt_tokens if long_context else None}"
+    )
 
 
 if __name__ == "__main__":
