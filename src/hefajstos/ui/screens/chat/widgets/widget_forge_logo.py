@@ -5,7 +5,7 @@ from textual.style import Style
 from textual.timer import Timer
 from textual.widgets import Label, Static
 
-from hefajstos.ui.screens.chat.widgets.widget_working_indicator import SPINNER_FRAMES
+from hefajstos.ui.widgets.widget_spinner import WidgetSpinner
 
 TITLE = "H E F A J S T O S"
 TAGLINE = "coding agent · github copilot sdk"
@@ -80,34 +80,32 @@ class WidgetForgeLogo(HorizontalGroup):
         with VerticalGroup(classes="forge-text"):
             yield Label(TITLE, classes="forge-title", markup=False)
             yield Label(TAGLINE, classes="forge-tagline", markup=False)
-            yield Label("", id="forge-status", markup=False)
+            yield WidgetSpinner(id="forge-status")
 
     def on_mount(self) -> None:
         self.tick = 0
         self.timer: Timer = self.set_interval(TICK_SECONDS, self.show_next_tick)
         self.show_next_tick()
+        self.status.start(STARTING_TEXT)
 
     def show_next_tick(self) -> None:
         self.tick += 1
-        drawing = HAMMER_BEAT[self.tick % len(HAMMER_BEAT)]
-        spinner = SPINNER_FRAMES[self.tick % len(SPINNER_FRAMES)]
-        self.show(drawing, f"{spinner} {STARTING_TEXT}")
+        self.show_drawing(HAMMER_BEAT[self.tick % len(HAMMER_BEAT)])
 
     def show_ready(self) -> None:
-        self.timer.stop()
-        self.show(HAMMER_DOWN, READY_TEXT, status_class="-ready")
+        self.rest_the_hammer(READY_TEXT, status_class="-ready")
 
     def show_failed(self) -> None:
-        self.timer.stop()
-        self.show(HAMMER_DOWN, FAILED_TEXT, status_class="-error")
+        self.rest_the_hammer(FAILED_TEXT, status_class="-error")
 
-    def show(
-        self, drawing: tuple[str, ...], status_text: str, status_class: str = ""
-    ) -> None:
+    def rest_the_hammer(self, status_text: str, status_class: str) -> None:
+        self.timer.stop()
+        self.show_drawing(HAMMER_DOWN)
+        self.status.stop(status_text)
+        self.status.add_class(status_class)
+
+    def show_drawing(self, drawing: tuple[str, ...]) -> None:
         self.query_one("#forge-drawing", Static).update(self.paint(drawing))
-        status = self.query_one("#forge-status", Label)
-        status.update(status_text)
-        status.set_classes(status_class)
 
     def paint(self, drawing: tuple[str, ...]) -> Content:
         pieces: list[str | tuple[str, Style]] = []
@@ -122,3 +120,7 @@ class WidgetForgeLogo(HorizontalGroup):
                     style = self.get_visual_style(f"forge--{part}", partial=True)
                     pieces.append((character, style))
         return Content.assemble(*pieces)
+
+    @property
+    def status(self) -> WidgetSpinner:
+        return self.query_one("#forge-status", WidgetSpinner)

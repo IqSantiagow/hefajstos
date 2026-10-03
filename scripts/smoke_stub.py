@@ -63,9 +63,7 @@ async def walk_one_turn(answer: str) -> bool:
             print("ERROR: the agent did not start")
             return False
 
-        logo_status = app.screen.query_one(WidgetForgeLogo).query_one(
-            "#forge-status", Label
-        )
+        logo_status = app.screen.query_one(WidgetForgeLogo).status
         if str(logo_status.content) != READY_TEXT:
             print("ERROR: the forge logo does not say the agent is ready")
             return False
