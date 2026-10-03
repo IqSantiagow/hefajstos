@@ -107,7 +107,7 @@ hand-written Fakes for protocols (not `Mock`), `make_x(**overrides)` builders.
 **Widgets are not tested** — the convention pushes every testable decision into
 a view model or a module-level function; the only exception under `ui/` are
 the pure module-level functions (`feed_ids.py`, `shorten_home`,
-`format_token_count`, `preview_tool_output`) - they stay next to the widget
+`format_token_count`, `preview_tool_output`, `forge_part`) - they stay next to the widget
 that uses them. `ui/` is excluded from coverage; `scripts/smoke_stub.py`
 covers it instead.
 

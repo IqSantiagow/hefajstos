@@ -7,3 +7,4 @@ dist/
 build/
 *.egg-info/
 .ruff_cache/
+.claude/rubber-duck/SKILL.md

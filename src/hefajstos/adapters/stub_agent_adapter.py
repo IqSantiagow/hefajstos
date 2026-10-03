@@ -16,6 +16,9 @@ from hefajstos.services.models.agent_events import (
 # Slow enough to see the streaming, fast enough not to be annoying.
 WORD_DELAY_SECONDS = 0.04
 
+# The real runtime takes a few seconds to start - long enough to see the forge logo.
+STARTUP_DELAY_SECONDS = 1.5
+
 OPENING_WORDS = "Sure, I will start by checking what is in the directory.\n".split(" ")
 
 CLOSING_WORDS = (
@@ -34,7 +37,7 @@ class StubAgentAdapter:
         self.__permission_answer: asyncio.Future | None = None
 
     async def start(self) -> None:
-        pass
+        await asyncio.sleep(STARTUP_DELAY_SECONDS)
 
     async def send_and_stream(self, prompt: str) -> AsyncGenerator[AgentEvent, None]:
         self.__turn_number += 1

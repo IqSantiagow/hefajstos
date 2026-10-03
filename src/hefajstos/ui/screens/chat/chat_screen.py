@@ -19,6 +19,7 @@ from hefajstos.presentation.view_models.permission_view_model import PermissionV
 from hefajstos.services.models.agent_events import AgentStatus, PermissionDecision
 from hefajstos.ui.screens.chat.modal_permission_screen import ModalPermissionScreen
 from hefajstos.ui.screens.chat.widgets.widget_chat_feed import WidgetChatFeed
+from hefajstos.ui.screens.chat.widgets.widget_forge_logo import WidgetForgeLogo
 from hefajstos.ui.screens.chat.widgets.widget_prompt_input import WidgetPromptInput
 from hefajstos.ui.screens.chat.widgets.widget_status_footer import WidgetStatusFooter
 from hefajstos.ui.screens.chat.widgets.widget_working_indicator import (
@@ -41,7 +42,6 @@ DECISION_LABELS = {
 
 class ChatScreen(Screen):
     BINDINGS = [
-        # priority, or the focused Input takes ctrl+x as "cut" and the turn goes on.
         Binding("ctrl+x", "abort_turn", "Abort turn", priority=True),
     ]
 
@@ -61,15 +61,16 @@ class ChatScreen(Screen):
 
     @work
     async def start_agent_worker(self) -> None:
-        """The first run also downloads the Copilot runtime, so it can take a while."""
         try:
             agent_info = await self.chat_repository.start_agent()
         except Exception as e:
             logger.exception("Failed to start the agent", exc_info=e)
             self.notify(f"Could not start the agent: {e}", severity="error")
+            self.forge_logo.show_failed()
             self.feed.add_notice(NoticeViewModel(content=str(e), is_error=True))
             return
 
+        self.forge_logo.show_ready()
         self.status_footer.show_agent_info(agent_info)
         self.working_indicator.agent_status = AgentStatus.IDLE
         self.prompt_input.agent_status = AgentStatus.IDLE
@@ -77,11 +78,6 @@ class ChatScreen(Screen):
 
     @work
     async def set_up_agent_stream_worker(self) -> None:
-        """The only consumer of the agent stream.
-
-        A permission request parks this worker on the modal. That is fine: the
-        agent waits for the answer anyway, so nothing new can arrive meanwhile.
-        """
         async for item in self.chat_repository.stream_agent_responses():
             if isinstance(item, AgentStatus):
                 self.working_indicator.agent_status = item
@@ -117,7 +113,6 @@ class ChatScreen(Screen):
     def handle_user_prompt_submitted(
         self, message: WidgetPromptInput.UserPromptSubmitted
     ) -> None:
-        # Echo first, then send - so the answer can never land above the question.
         self.feed.add_user_message(UserMessageViewModel(content=message.prompt))
         self.chat_repository.send_message(message.prompt)
 
@@ -127,6 +122,10 @@ class ChatScreen(Screen):
     @property
     def feed(self) -> WidgetChatFeed:
         return self.query_one("#chat-feed", WidgetChatFeed)
+
+    @property
+    def forge_logo(self) -> WidgetForgeLogo:
+        return self.query_one(WidgetForgeLogo)
 
     @property
     def working_indicator(self) -> WidgetWorkingIndicator:

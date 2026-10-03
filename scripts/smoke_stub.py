@@ -24,6 +24,10 @@ from hefajstos.ui.screens.chat.widgets.widget_agent_message import (  # noqa: E4
 from hefajstos.ui.screens.chat.widgets.widget_chat_feed import (  # noqa: E402
     WidgetChatFeed,
 )
+from hefajstos.ui.screens.chat.widgets.widget_forge_logo import (  # noqa: E402
+    READY_TEXT,
+    WidgetForgeLogo,
+)
 from hefajstos.ui.screens.chat.widgets.widget_prompt_input import (  # noqa: E402
     PROMPT_INPUT_ID,
 )
@@ -49,7 +53,24 @@ async def walk_one_turn(answer: str) -> bool:
     app = HefajstosApp()
 
     async with app.run_test(size=(100, 30)) as pilot:
-        await pilot.pause()
+        # The stub pretends to start for a moment, like the real runtime.
+        indicator = app.screen.query_one(WidgetWorkingIndicator)
+        for _ in range(WAIT_STEPS):
+            await pilot.pause(WAIT_STEP_SECONDS)
+            if indicator.agent_status is AgentStatus.IDLE:
+                break
+        else:
+            print("ERROR: the agent did not start")
+            return False
+
+        logo_status = app.screen.query_one(WidgetForgeLogo).query_one(
+            "#forge-status", Label
+        )
+        if str(logo_status.content) != READY_TEXT:
+            print("ERROR: the forge logo does not say the agent is ready")
+            return False
+        print("  logo: the hammer rests, the agent is ready")
+
         app.screen.query_one(f"#{PROMPT_INPUT_ID}", Input).value = "list the files"
         await pilot.press("enter")
 

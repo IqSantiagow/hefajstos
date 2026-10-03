@@ -16,6 +16,7 @@ from hefajstos.ui.screens.chat.widgets.widget_agent_message import (
     WidgetAgentMessage,
     WidgetUserMessage,
 )
+from hefajstos.ui.screens.chat.widgets.widget_forge_logo import WidgetForgeLogo
 from hefajstos.ui.screens.chat.widgets.widget_tool_call import WidgetToolCall
 
 # CSS classes of plain feed entries - they have to match ui/css.tcss.
@@ -25,7 +26,7 @@ ERROR_ENTRY = "error-entry"
 # Keeps the DOM small. Older entries are removed from the top.
 MAX_ENTRIES = 300
 
-WELCOME_TEXT = "hefajstos  ctrl+x abort · ctrl+c quit · click a tool result to expand"
+WELCOME_TEXT = "ctrl+x abort · ctrl+c quit · click a tool result to expand"
 
 
 class WidgetChatFeed(VerticalScroll):
@@ -33,6 +34,7 @@ class WidgetChatFeed(VerticalScroll):
         self.anchor()
 
     def compose(self) -> ComposeResult:
+        yield WidgetForgeLogo()
         yield Static(WELCOME_TEXT, markup=False, classes=f"chat-entry {NOTICE_ENTRY}")
 
     def add_user_message(self, user_message: UserMessageViewModel) -> None:

@@ -12,6 +12,7 @@ $user-message-bg: #2a3558;
 $tool-pending-bg: #313338;
 $tool-success-bg: #1d4232;
 $tool-error-bg: #4f2a22;
+$hammer-handle-color: #b98a5e;
 
 Screen {
     background: $surface;
@@ -91,6 +92,36 @@ Screen {
     color: $muted-color;
     margin-top: 1;
 }
+
+/* ============================================================
+   Forge logo - the first entry of the chat feed
+   (WidgetForgeLogo)
+   The drawing is one Static; its parts are component classes.
+   ============================================================ */
+#forge-drawing {
+    width: 11;
+    height: 5;
+    margin: 0 4 0 1;
+}
+
+.forge-text {
+    width: 1fr;
+    margin-top: 1;
+}
+
+.forge-title   { color: $primary; text-style: bold; }
+.forge-tagline { color: $dim-color; }
+
+#forge-status        { color: $muted-color; }
+#forge-status.-ready { color: $success; }
+#forge-status.-error { color: $error; }
+
+WidgetForgeLogo > .forge--anvil-face    { color: $muted-color; }
+WidgetForgeLogo > .forge--anvil-body    { color: $border-muted; }
+WidgetForgeLogo > .forge--hammer-head   { color: $foreground; }
+WidgetForgeLogo > .forge--hammer-handle { color: $hammer-handle-color; }
+WidgetForgeLogo > .forge--spark         { color: $warning; }
+WidgetForgeLogo > .forge--ember         { color: $error; }
 
 /* ============================================================
    Working indicator
