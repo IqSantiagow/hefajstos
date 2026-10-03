@@ -1,6 +1,3 @@
-"""describe_model_row and describe_settings are pure functions, so they are tested
-even though they live next to the widget that uses them."""
-
 import unittest
 
 from hefajstos.presentation.view_models.model_picker_view_model import (

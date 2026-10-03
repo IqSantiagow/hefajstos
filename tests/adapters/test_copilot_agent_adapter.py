@@ -35,8 +35,6 @@ STREAM_TIMEOUT_SECONDS = 1.0
 
 
 class FakeSession:
-    """Plays `events_on_send` through the SDK callback whenever a prompt is sent."""
-
     def __init__(self) -> None:
         self.handler: Any = None
         self.unsubscribed = False
@@ -286,7 +284,6 @@ class TestCopilotAgentAdapterSendAndStream(CopilotAgentAdapterTestCase):
 
 class TestCopilotAgentAdapterPermissions(CopilotAgentAdapterTestCase):
     async def start_turn_and_ask(self, request=None) -> tuple[Any, asyncio.Task]:
-        """Start a turn, then let the SDK ask for permission in the middle of it."""
         await self.adapter.start()
         stream = self.adapter.send_and_stream("do something")
         asking = self.ask_for_permission(request)

@@ -4,13 +4,6 @@ from hefajstos.ui.screens.chat.widgets.feed_ids import message_widget_id
 
 
 class WidgetAgentMessage(Static):
-    """Keeps its text in self.__text, because chunks are appended one by one
-    and Static only knows how to replace its content. The blank lines around
-    the text are not shown - the margin between entries does that job.
-
-    markup=False everywhere: a diff or an `ls` output is full of [brackets].
-    """
-
     DEFAULT_CLASSES = "chat-entry agent-entry"
 
     def __init__(self, message_id: str, **kwargs) -> None:

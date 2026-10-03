@@ -34,8 +34,6 @@ class FakeCommand:
 
 
 class FakeCommands:
-    """Implements CommandsProtocol with one canned result (or failure)."""
-
     def __init__(
         self,
         result: CommandResult | None = None,
@@ -58,8 +56,6 @@ class FakeCommands:
 
 
 class FakeAgent:
-    """The part of AgentProtocol that a model change uses."""
-
     def __init__(self, failure: Exception | None = None) -> None:
         self.model = "gpt-5"
         self.model_settings: dict[str, str] = {}

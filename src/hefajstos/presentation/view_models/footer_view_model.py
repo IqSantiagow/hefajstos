@@ -8,7 +8,6 @@ from hefajstos.services.models.model_choice import PROVIDER_DEFAULT
 class AgentInfoViewModel:
     model: str
     working_directory: str
-    # Only what differs from the provider's default, e.g. ["high"].
     model_settings: list[str] = field(default_factory=list)
 
 

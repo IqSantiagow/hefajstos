@@ -24,10 +24,8 @@ from hefajstos.use_cases.commands.run_command_use_case import RunCommandUseCase
 
 
 class Container(containers.DeclarativeContainer):
-    # ----- CONFIG -----
     config = providers.Configuration(pydantic_settings=[AppConfig()])  # type: ignore
 
-    # ----- ADAPTERS -----
     copilot_adapter = providers.Singleton(
         CopilotAgentAdapter,
         model=config.agent.model,
@@ -39,21 +37,18 @@ class Container(containers.DeclarativeContainer):
         model=config.agent.model,
         working_directory=config.agent.working_directory,
     )
-    # Selector builds only the adapter it picks.
     agent_sdk = providers.Selector(
         config.agent.engine,
         copilot=copilot_adapter,
         stub=stub_adapter,
     )
 
-    # ----- SERVICES -----
     agent_service = providers.Singleton(
         AgentService,
         agent_sdk=agent_sdk,
         auto_approve_tools=config.agent.auto_approve,
     )
 
-    # ----- SLASH COMMANDS -----
     model_command = providers.Singleton(ModelCommand, agent_protocol=agent_service)
     clear_command = providers.Singleton(ClearCommand)
     commands_service = providers.Singleton(
@@ -61,7 +56,6 @@ class Container(containers.DeclarativeContainer):
         commands=providers.List(model_command, clear_command),
     )
 
-    # ----- USE CASES -----
     start_agent_use_case = providers.Factory(
         StartAgentUseCase, agent_protocol=agent_service
     )
@@ -90,7 +84,6 @@ class Container(containers.DeclarativeContainer):
         ChangeModelUseCase, agent_protocol=agent_service
     )
 
-    # ----- REPOSITORIES -----
     chat_repository = providers.Singleton(
         ChatRepository,
         start_agent_use_case=start_agent_use_case,

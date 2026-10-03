@@ -1,5 +1,3 @@
-"""A scripted agent that never talks to GitHub. AGENT__ENGINE=stub turns it on."""
-
 import asyncio
 from collections.abc import AsyncGenerator
 
@@ -19,10 +17,8 @@ from hefajstos.services.models.model_choice import (
     ModelSetting,
 )
 
-# Slow enough to see the streaming, fast enough not to be annoying.
 WORD_DELAY_SECONDS = 0.04
 
-# The real runtime takes a few seconds to start - long enough to see the forge logo.
 STARTUP_DELAY_SECONDS = 1.5
 
 OPENING_WORDS = "Sure, I will start by checking what is in the directory.\n".split(" ")
@@ -32,8 +28,6 @@ CLOSING_WORDS = (
     " behind the same interface."
 ).split(" ")
 
-# Shaped like what Copilot returns: one model with both settings, one with an
-# effort only and one with none at all.
 STUB_MODELS = [
     ModelChoice(
         id="stub-large",
@@ -108,7 +102,6 @@ class StubAgentAdapter:
         if self.__was_aborted:
             return
 
-        # A rejected tool does not run, so it reports nothing.
         if decision is PermissionDecision.APPROVE_ONCE:
             tool_call_id = f"stub-call-{self.__turn_number}"
             yield ToolStarted(
@@ -135,7 +128,6 @@ class StubAgentAdapter:
         return True
 
     async def list_models(self) -> list[ModelChoice]:
-        # The stub answers to any model name, so the configured one is listed too.
         if any(model.id == self.model for model in STUB_MODELS):
             return list(STUB_MODELS)
         configured = ModelChoice(

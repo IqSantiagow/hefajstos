@@ -1,5 +1,3 @@
-"""Read once from .env. Every value has a default, so .env is optional."""
-
 from pathlib import Path
 from typing import Any, Literal
 

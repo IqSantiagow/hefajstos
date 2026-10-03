@@ -110,7 +110,6 @@ def make_session_error(**overrides) -> SessionEvent:
 
 
 def make_model_info(*, long_context: bool = False, **overrides) -> ModelInfo:
-    """Shaped like a real Copilot model: the long context tier shows in its price."""
     long_context_prices = (
         ModelBillingTokenPricesLongContext(max_prompt_tokens=936_000)
         if long_context

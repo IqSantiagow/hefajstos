@@ -138,7 +138,6 @@ class ChatScreen(Screen):
     def handle_command_submitted(
         self, message: WidgetPromptInput.CommandSubmitted
     ) -> None:
-        # A command never goes into the prompt queue, so it also works mid-turn.
         self.feed.add_user_message(UserMessageViewModel(content=message.text))
         self.run_command_worker(message.text)
 

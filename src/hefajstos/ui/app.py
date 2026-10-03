@@ -10,7 +10,6 @@ from hefajstos.ui.screens.chat.chat_screen import ChatScreen
 
 logger = logging.getLogger(__name__)
 
-# Colours taken (approximately) from pi's dark theme - github.com/earendil-works/pi
 THEME = Theme(
     name="pi-dark",
     dark=True,
@@ -48,12 +47,12 @@ class HefajstosApp(App):
         self.push_screen(ChatScreen(chat_repository=self.chat_repository))
 
     async def action_quit(self) -> None:
-        """Stop the agent first, or the Copilot process outlives the app."""
+        # Stop the agent first, or the Copilot process outlives the app.
         await self.shutdown_agent()
         self.exit()
 
     async def on_unmount(self) -> None:
-        """For every exit that did not go through action_quit."""
+        # For every exit that did not go through action_quit.
         await self.shutdown_agent()
 
     async def shutdown_agent(self) -> None:

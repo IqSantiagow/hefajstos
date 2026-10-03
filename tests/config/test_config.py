@@ -1,5 +1,3 @@
-"""Only our own logic is tested here, not pydantic itself."""
-
 import unittest
 from pathlib import Path
 
@@ -8,7 +6,6 @@ from hefajstos.config.config import Agent
 
 class TestAgentWorkingDirectory(unittest.TestCase):
     def test_an_empty_value_becomes_the_current_directory(self) -> None:
-        """The default has to be resolved here, or every consumer gets an empty path."""
         self.assertEqual(str(Path.cwd()), Agent().working_directory)
 
     def test_expands_a_tilde(self) -> None:
@@ -27,5 +24,4 @@ class TestAgentDefaults(unittest.TestCase):
         self.assertEqual("copilot", Agent().engine)
 
     def test_does_not_auto_approve_by_default(self) -> None:
-        """Approving every shell command silently is not a safe default."""
         self.assertFalse(Agent().auto_approve)

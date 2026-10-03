@@ -3,7 +3,6 @@ from hefajstos.services.models.commands import CommandNotice, CommandResult
 
 
 def parse_command_text(text: str) -> tuple[str, str]:
-    """'/model gpt-5 ' -> ('model', 'gpt-5')."""
     name, _, arguments = text.strip().removeprefix("/").partition(" ")
     return name.lower(), arguments.strip()
 

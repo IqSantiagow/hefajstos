@@ -12,14 +12,12 @@ from hefajstos.ui.screens.chat.widgets.feed_ids import tool_widget_id
 
 EMPTY_RESULT_TEXT = "(no output)"
 
-# A tool result longer than this is cut in the feed until the user clicks it.
 TOOL_OUTPUT_PREVIEW_LINES = 10
 
 
 def preview_tool_output(
     content: str, max_lines: int = TOOL_OUTPUT_PREVIEW_LINES
 ) -> str:
-    """The first max_lines lines, plus a hint when something was cut off."""
     lines = content.splitlines()
     hidden = len(lines) - max_lines
     if hidden <= 0:
@@ -28,11 +26,6 @@ def preview_tool_output(
 
 
 class WidgetToolCall(VerticalGroup):
-    """Keeps the result in self.result - a fast tool can finish before compose().
-
-    A long result is cut to a preview; a click shows all of it, the next one cuts it.
-    """
-
     DEFAULT_CLASSES = "chat-entry tool-entry"
 
     def __init__(self, view_model: ToolCallViewModel, **kwargs) -> None:

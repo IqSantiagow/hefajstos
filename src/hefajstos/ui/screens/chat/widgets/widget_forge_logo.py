@@ -36,7 +36,6 @@ STRIKE = (
     *ANVIL,
 )
 
-# One drawing per tick.
 HAMMER_BEAT = (
     HAMMER_UP,
     HAMMER_UP,
@@ -50,7 +49,6 @@ HAMMER_BEAT = (
 
 
 def forge_part(row_number: int, character: str) -> str:
-    """Which part of the drawing a character is. Its colour is in ui/css.tcss."""
     if row_number == 2:
         return "anvil-face"
     if row_number > 2:

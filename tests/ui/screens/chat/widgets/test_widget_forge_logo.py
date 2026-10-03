@@ -1,6 +1,3 @@
-"""forge_part is a pure function, so it is tested even though it lives next to
-the widget that uses it."""
-
 import unittest
 
 from hefajstos.ui.screens.chat.widgets.widget_forge_logo import (

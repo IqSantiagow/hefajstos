@@ -270,7 +270,6 @@ class TestMapModel(unittest.TestCase):
         self.assertEqual([PROVIDER_DEFAULT, "long_context"], context.choices)
 
     def test_a_model_without_billing_has_no_context_setting(self) -> None:
-        """'auto' comes without billing and without any setting."""
         model = map_model(
             make_model_info(id="auto", billing=None, supported_reasoning_efforts=None)
         )

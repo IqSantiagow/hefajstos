@@ -1,6 +1,3 @@
-"""shorten_home and format_token_count are pure functions, so they are tested
-even though they live next to the widget that uses them."""
-
 import unittest
 from pathlib import Path
 

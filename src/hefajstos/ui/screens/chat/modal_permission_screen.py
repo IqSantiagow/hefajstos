@@ -10,8 +10,6 @@ KEY_HINT = "y allow · n reject · esc reject"
 
 
 class ModalPermissionScreen(ModalScreen[PermissionDecision]):
-    """A bar across the bottom of the screen, answered with the keyboard only."""
-
     BINDINGS = [
         ("y", "approve", "Allow"),
         ("n", "reject", "Reject"),

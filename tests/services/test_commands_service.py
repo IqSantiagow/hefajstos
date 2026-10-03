@@ -10,8 +10,6 @@ from hefajstos.services.models.commands import (
 
 
 class FakeCommand:
-    """Implements CommandProtocol and remembers the arguments it got."""
-
     def __init__(
         self, name: str, source: CommandSource = CommandSource.BUILT_IN
     ) -> None:

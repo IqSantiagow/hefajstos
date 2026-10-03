@@ -4,12 +4,10 @@ from textual.widgets.option_list import Option
 
 from hefajstos.presentation.view_models.command_view_model import CommandViewModel
 
-# Universal visibility class from ui/css.tcss.
 HIDDEN = "hidden"
 
 
 def describe_command(command: CommandViewModel) -> str:
-    """'/model      Switch the model…  built-in'."""
     return f"/{command.name:<10} {command.description}  {command.source_label}"
 
 

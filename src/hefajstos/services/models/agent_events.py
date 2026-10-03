@@ -12,7 +12,6 @@ class AgentStatus(Enum):
 
 class PermissionDecision(Enum):
     APPROVE_ONCE = "approve_once"
-    # The UI does not offer it yet, but the SDK supports it.
     APPROVE_FOR_SESSION = "approve_for_session"
     REJECT = "reject"
     USER_NOT_AVAILABLE = "user_not_available"
@@ -20,12 +19,7 @@ class PermissionDecision(Enum):
 
 @dataclass
 class AgentText:
-    """A piece of the agent's answer.
-
-    The chunks come first (is_final=False). Then the whole message arrives once
-    more with is_final=True and replaces them.
-    """
-
+    # The final message replaces the chunks that came before it.
     message_id: str
     text: str
     is_final: bool
@@ -47,8 +41,6 @@ class ToolFinished:
 
 @dataclass
 class PermissionRequested:
-    """The agent waits until request_id gets an answer."""
-
     request_id: str
     action: str
     summary: str
@@ -72,7 +64,7 @@ class AgentError:
 
 @dataclass
 class TurnFinished:
-    """The agent is done with the prompt. Only the adapter sees it."""
+    pass
 
 
 AgentEvent = (

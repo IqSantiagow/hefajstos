@@ -42,7 +42,6 @@ class CopilotAgentAdapter:
         permission_timeout_seconds: int,
     ) -> None:
         self.model = model
-        # The session starts with the model's normal behavior; /model changes it.
         self.model_settings: dict[str, str] = {}
         self.working_directory = working_directory
         self.permission_timeout_seconds = permission_timeout_seconds
@@ -81,7 +80,6 @@ class CopilotAgentAdapter:
             if isinstance(event, TurnFinished):
                 return
             yield event
-            # The SDK's own send_and_wait also stops on an error.
             if isinstance(event, AgentError):
                 return
 
@@ -126,7 +124,7 @@ class CopilotAgentAdapter:
         await self.__session.abort()
 
     async def stop(self) -> None:
-        """Order matters: open permissions first, or the CLI process hangs."""
+        # Open permissions first, or the CLI process hangs.
         self.__answer_all_pending_permissions(PermissionDecision.USER_NOT_AVAILABLE)
 
         if self.__session is not None:
@@ -157,7 +155,6 @@ class CopilotAgentAdapter:
             self.__client = None
 
     async def __check_model_exists(self) -> None:
-        """A stale model name in .env is the most likely reason the app won't start."""
         if self.__client is None:
             return
         try:
@@ -181,10 +178,7 @@ class CopilotAgentAdapter:
             logger.exception("Failed to handle a session event", exc_info=e)
 
     async def __on_permission_request(self, request: Any, invocation: Any) -> Any:
-        """The agent is stopped until this returns - the return value is the answer.
-
-        The SDK does not tell us its request id, so we make our own.
-        """
+        # The SDK gives no request id, so we make our own.
         permission = map_permission_request(request, uuid4().hex)
         future = asyncio.get_running_loop().create_future()
         self.__pending_permissions[permission.request_id] = future

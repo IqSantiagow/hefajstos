@@ -42,25 +42,17 @@ from hefajstos.services.models.model_choice import (
 
 logger = logging.getLogger(__name__)
 
-# The feed shows a preview; the agent itself still gets the full text.
 MAX_TOOL_RESULT_CHARACTERS = 2000
 
-# A write request carries the whole diff. The modal has to stay readable.
 MAX_PERMISSION_DETAIL_CHARACTERS = 1500
 
-# Setting keys of a Copilot ModelChoice - the adapter turns them back into
-# set_model() arguments.
 REASONING_EFFORT = "reasoning_effort"
 CONTEXT_TIER = "context_tier"
 LONG_CONTEXT = "long_context"
 
 
 def map_session_event(event: SessionEvent) -> AgentEvent | None:
-    """None for every event we do not use - the SDK has over a hundred of them.
-
-    `permission.requested` is left out on purpose: the same request also comes
-    through the on_permission_request callback and would show up twice.
-    """
+    # permission.requested is skipped: it also comes through on_permission_request.
     data = event.data
 
     if isinstance(data, AssistantMessageDeltaData):
@@ -138,7 +130,6 @@ def describe_read_access(request: PermissionRequest) -> tuple[bool, list[str]]:
 
 
 def describe_permission_request(request: PermissionRequest) -> tuple[str, str, str]:
-    """(action, summary, detail). The action goes into the modal title."""
     if isinstance(request, PermissionRequestShell):
         return "run command", request.full_command_text, request.intention
 
@@ -196,7 +187,6 @@ def describe_permission_request(request: PermissionRequest) -> tuple[str, str, s
 
 
 def map_model(model: ModelInfo) -> ModelChoice:
-    """Only the settings this model really has. 'auto' has none."""
     settings = []
 
     if model.supported_reasoning_efforts:
@@ -226,7 +216,6 @@ def map_model(model: ModelInfo) -> ModelChoice:
 
 
 def sdk_setting_value(settings: dict[str, str], key: str) -> str | None:
-    """None tells the SDK to use the model's normal behavior."""
     value = settings.get(key, PROVIDER_DEFAULT)
     return None if value == PROVIDER_DEFAULT else value
 

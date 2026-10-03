@@ -14,13 +14,11 @@ KEY_HINT = "↑↓ model · tab next setting · ←→ change · enter apply · 
 NO_SETTINGS_TEXT = "This model has no settings."
 NO_MODELS_TEXT = "The provider returned no models."
 
-# CSS classes - they have to match ui/css.tcss.
 MODEL_ROW = "picker-row"
 SELECTED_ROW = "-selected"
 
 
 def describe_model_row(row: ModelRowViewModel) -> str:
-    """'Claude Sonnet 5.5              1M  current'."""
     context = (
         format_token_count(row.context_window_tokens)
         if row.context_window_tokens
@@ -33,7 +31,6 @@ def describe_model_row(row: ModelRowViewModel) -> str:
 def describe_settings(
     row: ModelRowViewModel, selected_indexes: list[int], active_setting: int
 ) -> str:
-    """One line per setting; the one ←→ changes is marked with '›'."""
     if not row.settings:
         return NO_SETTINGS_TEXT
     lines = []
@@ -44,8 +41,6 @@ def describe_settings(
 
 
 class WidgetModelPicker(WidgetPanel):
-    """Finishes with a ModelSelection, or None on escape."""
-
     BINDINGS = [
         Binding("up", "move_model(-1)", show=False),
         Binding("down", "move_model(1)", show=False),
@@ -61,7 +56,6 @@ class WidgetModelPicker(WidgetPanel):
         self.view_model = view_model
         self.model_index = view_model.selected_index
         self.setting_index = 0
-        # Every model keeps what was picked for it while the picker is open.
         self.selected_indexes = [
             [setting.selected_index for setting in row.settings]
             for row in view_model.models

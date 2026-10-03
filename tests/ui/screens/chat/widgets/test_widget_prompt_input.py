@@ -1,6 +1,3 @@
-"""is_command_prefix and describe_command are pure functions, so they are tested
-even though they live next to the widgets that use them."""
-
 import unittest
 
 from hefajstos.presentation.view_models.command_view_model import CommandViewModel

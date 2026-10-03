@@ -16,7 +16,6 @@ READ_TIMEOUT_SECONDS = 1.0
 
 
 async def play_turn(adapter: StubAgentAdapter, decision: PermissionDecision) -> list:
-    """Play one turn and answer the permission request with `decision`."""
     events = []
 
     async def read_all() -> None:

@@ -23,7 +23,6 @@ class ModelRowViewModel:
     settings: list[ModelSettingViewModel]
 
     def to_selection(self, selected_indexes: list[int]) -> ModelSelection:
-        """selected_indexes goes in the same order as settings."""
         return ModelSelection(
             model_id=self.model_id,
             settings={
@@ -36,7 +35,6 @@ class ModelRowViewModel:
 @dataclass(slots=True)
 class ModelPickerViewModel:
     models: list[ModelRowViewModel]
-    # The row the picker opens on - the current model, or the first one.
     selected_index: int
 
     @classmethod
@@ -53,7 +51,6 @@ def _build_row(
     model: ModelChoice, current_model_id: str, current_settings: dict[str, str]
 ) -> ModelRowViewModel:
     is_current = model.id == current_model_id
-    # Another model opens on its first choice - the provider's default.
     chosen = current_settings if is_current else {}
     return ModelRowViewModel(
         model_id=model.id,

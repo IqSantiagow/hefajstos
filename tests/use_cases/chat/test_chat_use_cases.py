@@ -32,8 +32,6 @@ from hefajstos.use_cases.chat.stream_agent_responses_use_case import (
 
 
 class FakeAgent:
-    """Implements AgentProtocol with canned data."""
-
     def __init__(
         self,
         items: list[AgentStatus | AgentEvent] | None = None,

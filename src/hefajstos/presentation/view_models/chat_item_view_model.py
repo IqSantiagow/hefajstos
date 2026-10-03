@@ -12,8 +12,6 @@ from hefajstos.services.models.agent_events import (
 )
 
 
-# Arguments shown on the tool line, most useful first. Anything else is shown
-# as compact JSON.
 _ARGUMENTS_SHOWN_ON_TOOL_LINE = (
     "command",
     "path",
@@ -74,7 +72,6 @@ ChatItem = (
 
 
 def build_chat_item(event: AgentEvent) -> ChatItem | None:
-    """None for events the feed does not show."""
     if isinstance(event, AgentText):
         return AgentTextViewModel(
             message_id=event.message_id, text=event.text, is_final=event.is_final

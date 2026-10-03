@@ -1,6 +1,3 @@
-"""preview_tool_output is a pure function, so it is tested even though it lives
-next to the widget that uses it."""
-
 import unittest
 
 from hefajstos.ui.screens.chat.widgets.widget_tool_call import preview_tool_output

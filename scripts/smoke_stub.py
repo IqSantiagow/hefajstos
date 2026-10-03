@@ -1,12 +1,3 @@
-"""Drives the whole UI headlessly against the stub agent, through the real AgentService.
-
-Not a unit test: it mounts the real app and walks one full turn, which is the
-cheapest way to catch a broken stylesheet, a bad selector or a widget that is
-updated before compose() has run. Widgets themselves stay untested on purpose.
-
-    uv run python scripts/smoke_stub.py
-"""
-
 import asyncio
 import os
 import sys
@@ -59,7 +50,6 @@ async def walk_one_turn(answer: str) -> bool:
     app = HefajstosApp()
 
     async with app.run_test(size=(100, 30)) as pilot:
-        # The stub pretends to start for a moment, like the real runtime.
         indicator = app.screen.query_one(WidgetWorkingIndicator)
         for _ in range(WAIT_STEPS):
             await pilot.pause(WAIT_STEP_SECONDS)
@@ -156,7 +146,6 @@ async def walk_slash_commands() -> bool:
             print("ERROR: the prompt stays enabled while the picker is open")
             return False
 
-        # Next model, then its first setting one step to the right.
         await pilot.press("down", "right")
         row = picker.view_model.models[picker.model_index]
         expected = row.to_selection(picker.selected_indexes[picker.model_index])

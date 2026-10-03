@@ -27,7 +27,6 @@ COMMAND_LIST_ACTIONS = {
 
 
 def is_command_prefix(value: str) -> bool:
-    """'/mo' still picks a command; '/model x' already has its arguments."""
     return value.startswith("/") and " " not in value
 
 
@@ -53,8 +52,6 @@ class WidgetPromptInput(VerticalGroup):
             super().__init__()
 
     class CommandPrefixChanged(Message):
-        """The screen answers with show_commands()."""
-
         def __init__(self, prefix: str) -> None:
             self.prefix = prefix
             super().__init__()
@@ -80,7 +77,6 @@ class WidgetPromptInput(VerticalGroup):
         if not text:
             return
 
-        # Enter on an open list runs the highlighted command, even for '/mo'.
         highlighted = self.command_list.highlighted_name
         if self.command_list.is_open and highlighted is not None:
             text = f"/{highlighted}"
@@ -125,7 +121,6 @@ class WidgetPromptInput(VerticalGroup):
         self.command_list.hide()
 
     def set_locked(self, is_locked: bool) -> None:
-        """Locked while a panel above the prompt waits for an answer."""
         self.__is_locked = is_locked
         self.__update_prompt()
 

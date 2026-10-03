@@ -1,5 +1,3 @@
-"""The only test of a whole module under ui/ - feed_ids is pure functions."""
-
 import re
 import unittest
 
@@ -9,7 +7,6 @@ from hefajstos.ui.screens.chat.widgets.feed_ids import (
     tool_widget_id,
 )
 
-# What Textual accepts as an id: a letter or underscore, then word characters.
 TEXTUAL_ID = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_-]*$")
 
 

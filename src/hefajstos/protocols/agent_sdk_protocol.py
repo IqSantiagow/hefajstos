@@ -7,7 +7,6 @@ from hefajstos.services.models.model_choice import ModelChoice, ModelSelection
 
 class AgentSdkProtocol(Protocol):
     model: str
-    # setting key -> choice, e.g. {"reasoning_effort": "high"}
     model_settings: dict[str, str]
     working_directory: str
 

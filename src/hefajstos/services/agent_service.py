@@ -30,7 +30,6 @@ class AgentService:
 
     @property
     def model(self) -> str:
-        # Read through every time: /model changes it on the adapter.
         return self.agent_sdk.model
 
     @property
@@ -92,7 +91,6 @@ class AgentService:
         self.agent_sdk.answer_permission(
             request.request_id, PermissionDecision.APPROVE_ONCE
         )
-        # Still goes to the feed, so the user sees what was approved for them.
         return replace(request, auto_approved=True)
 
     def __add_to_session_tokens(self, tokens: TokensUsed) -> TokensUsed:

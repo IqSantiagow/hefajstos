@@ -1,12 +1,3 @@
-"""Checks that the Copilot SDK can actually start here.
-
-Starts the client, reports the auth status and the available models, then stops.
-It does not run an agent turn, so it costs no quota. The first run downloads the
-Copilot runtime, which takes a while.
-
-    uv run python scripts/probe_copilot.py
-"""
-
 import asyncio
 import sys
 
@@ -39,7 +30,6 @@ async def main() -> int:
 
 
 def print_model(model) -> None:
-    """What /model builds its picker from: efforts, context window, long context."""
     limits = model.capabilities.limits
     prices = model.billing.token_prices if model.billing else None
     long_context = prices.long_context if prices else None

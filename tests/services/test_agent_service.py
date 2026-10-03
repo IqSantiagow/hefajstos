@@ -23,8 +23,6 @@ READ_TIMEOUT_SECONDS = 1.0
 
 
 class FakeAgentSdk:
-    """Stands in for CopilotAgentAdapter. Plays the same events for every prompt."""
-
     def __init__(self, events: list[AgentEvent] | None = None) -> None:
         self.model = "gpt-5"
         self.model_settings: dict[str, str] = {}
@@ -81,7 +79,6 @@ def make_permission(**overrides) -> PermissionRequested:
 
 
 async def read_one_turn(service: AgentService, prompt: str = "fix the tests") -> list:
-    """Everything the service yields for one prompt, from THINKING to IDLE."""
     service.add_prompt_to_queue(prompt)
     stream = service.consume_prompt_queue()
     items = []
@@ -214,7 +211,6 @@ class TestAgentServiceModels(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sdk.models, models)
 
     async def test_the_model_is_current_after_a_switch(self) -> None:
-        """A copy taken in __init__ would still say gpt-5 in the footer."""
         service = AgentService(FakeAgentSdk(), auto_approve_tools=False)
 
         await service.set_model(

@@ -19,11 +19,9 @@ from hefajstos.ui.screens.chat.widgets.widget_agent_message import (
 from hefajstos.ui.screens.chat.widgets.widget_forge_logo import WidgetForgeLogo
 from hefajstos.ui.screens.chat.widgets.widget_tool_call import WidgetToolCall
 
-# CSS classes of plain feed entries - they have to match ui/css.tcss.
 NOTICE_ENTRY = "notice-entry"
 ERROR_ENTRY = "error-entry"
 
-# Keeps the DOM small. Older entries are removed from the top.
 MAX_ENTRIES = 300
 
 WELCOME_TEXT = "ctrl+x abort · ctrl+c quit · click a tool result to expand"
@@ -90,7 +88,6 @@ class WidgetChatFeed(VerticalScroll):
         )
 
     def clear(self) -> None:
-        """/clear - only the screen forgets, the agent keeps its history."""
         self.remove_children()
 
     def __add_entry(self, widget) -> None:

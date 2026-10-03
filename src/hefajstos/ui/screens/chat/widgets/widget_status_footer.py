@@ -11,7 +11,6 @@ from hefajstos.presentation.view_models.footer_view_model import (
 
 
 def shorten_home(directory: str) -> str:
-    """'/Users/me/Projects/foo' -> '~/Projects/foo'."""
     home = str(Path.home())
     if directory == home:
         return "~"
@@ -21,7 +20,6 @@ def shorten_home(directory: str) -> str:
 
 
 def format_token_count(count: int) -> str:
-    """999 -> '999', 1284 -> '1.3k', 45000 -> '45k', 1_200_000 -> '1.2M'."""
     if count < 1_000:
         return str(count)
     if count < 10_000:
@@ -34,8 +32,6 @@ def format_token_count(count: int) -> str:
 
 
 class WidgetStatusFooter(VerticalGroup):
-    """Two quiet lines under the prompt: the directory, then tokens and the model."""
-
     DEFAULT_CLASSES = "status-footer"
 
     def compose(self) -> ComposeResult:

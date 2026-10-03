@@ -9,8 +9,6 @@ from hefajstos.services.models.model_choice import (
 
 
 class FakeAgent:
-    """The part of AgentProtocol that /model reads."""
-
     def __init__(self) -> None:
         self.model = "gpt-5"
         self.model_settings = {"reasoning_effort": "high"}
@@ -44,7 +42,6 @@ class TestModelCommand(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_the_picker_gets_a_copy_of_the_settings(self) -> None:
-        """The picker must not change what the agent holds."""
         agent = FakeAgent()
 
         result = await ModelCommand(agent_protocol=agent).run("")  # type: ignore[arg-type]
